@@ -78,14 +78,6 @@
     font-family:var(--mono); font-size:13px; letter-spacing:0.3px; min-width:44px; text-align:center;
   }
 
-  .month-select{
-    font-family:var(--mono); font-size:13px; letter-spacing:0.3px;
-    padding:6px 10px; border-radius:7px; cursor:pointer;
-    background:rgba(255,255,255,0.08); color:#fff;
-    border:1px solid rgba(255,255,255,0.2);
-  }
-  .month-select option{ color:var(--ink); }
-
   .today-btn{
     background:none; border:1px solid rgba(255,255,255,0.3); color:#fff;
     font-size:12px; padding:6px 12px; border-radius:7px; cursor:pointer;
@@ -104,8 +96,8 @@
   main{ max-width:1400px; margin:0 auto; padding:20px; }
 
   .grid-wrap{
-    overflow:auto; /* 가로, 세로 스크롤 모두 허용 */
-    max-height:calc(100vh - var(--header-h, 64px) - 40px); /* 화면 크기에 맞춰 테이블 높이 제한 */
+    overflow:auto; /* 가로/세로 스크롤 허용 */
+    max-height:calc(100vh - var(--header-h, 64px) - 40px); /* 화면 크기에 맞춘 테이블 높이 제한 */
     border:1px solid var(--line);
     border-radius:var(--radius);
     background:#fff;
@@ -130,7 +122,7 @@
 
   thead th{
     background:#fff;
-    position:sticky; top:0; /* 64px만큼 아래로 밀리던 현상 해결 */
+    position:sticky; top:0; /* 상단 밀림 현상 해결 */
     z-index:10;
     padding:0;
   }
@@ -310,7 +302,11 @@
       <button class="nav-btn" id="prevYearBtn" title="이전 해">«</button>
       <span class="year-label" id="yearLabel">-</span>
       <button class="nav-btn" id="nextYearBtn" title="다음 해">»</button>
-      <select class="month-select" id="monthSelect"></select>
+      
+      <button class="nav-btn" id="prevMonthBtn" title="이전 달">‹</button>
+      <span class="year-label" id="monthLabel">-</span>
+      <button class="nav-btn" id="nextMonthBtn" title="다음 달">›</button>
+      
       <button class="today-btn" id="todayBtn">오늘</button>
     </div>
     <button class="add-employee-btn" id="addEmployeeBtn">+ 인원 추가</button>
@@ -326,8 +322,7 @@
         </tr>
       </thead>
       <tbody id="gridBody">
-        <!-- rendered by JS -->
-      </tbody>
+        </tbody>
     </table>
   </div>
 </main>
@@ -466,14 +461,10 @@ function render(){
   renderBody();
 }
 
+// 텍스트 기반 렌더링으로 수정된 월 네비게이션
 function renderMonthNav(){
   document.getElementById('yearLabel').textContent = `${currentYear}년`;
-  const sel = document.getElementById('monthSelect');
-  if(sel.dataset.built !== '1'){
-    sel.innerHTML = Array.from({length:12}, (_, i) => `<option value="${i+1}">${i+1}월</option>`).join('');
-    sel.dataset.built = '1';
-  }
-  sel.value = String(currentMonth);
+  document.getElementById('monthLabel').textContent = `${currentMonth}월`;
 }
 
 let dragSrcId = null;
@@ -989,10 +980,27 @@ document.getElementById('nextYearBtn').addEventListener('click', async () => {
   currentYear += 1;
   await loadMonthData(); render();
 });
-document.getElementById('monthSelect').addEventListener('change', async (e) => {
-  currentMonth = Number(e.target.value);
-  await loadMonthData(); render();
+
+// 추가된 월 이동 버튼 이벤트
+document.getElementById('prevMonthBtn').addEventListener('click', async () => {
+  currentMonth -= 1;
+  if (currentMonth < 1) {
+    currentMonth = 12;
+    currentYear -= 1;
+  }
+  await loadMonthData(); 
+  render();
 });
+document.getElementById('nextMonthBtn').addEventListener('click', async () => {
+  currentMonth += 1;
+  if (currentMonth > 12) {
+    currentMonth = 1;
+    currentYear += 1;
+  }
+  await loadMonthData(); 
+  render();
+});
+
 document.getElementById('todayBtn').addEventListener('click', async () => {
   const changed = (currentYear !== TODAY.getFullYear()) || (currentMonth !== TODAY.getMonth()+1);
   currentYear = TODAY.getFullYear();
