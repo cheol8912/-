@@ -510,7 +510,7 @@
   .btn.danger:hover{ background:#FDEEEC; }
 
   /* 팝업 안, 입력창 하나(라벨 + input) 묶음의 여백 */
-  .field{ margin-bottom:12px; }
+  .field{ margin-bottom:30px; } /* 각 항목(프로젝트 타이틀/구성/단계/내용/진행률) 사이 간격 - 구역 구분이 확실히 보이도록 넉넉하게 */
   .field label{ display:block; font-size:12px; color:var(--muted); margin-bottom:5px; font-weight:600; } /* "이름", "직급" 같은 항목 이름표 글자 */
   .field input[type=text], .field input[type=number], .field textarea, .field select{
     width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px;
@@ -1507,7 +1507,6 @@ function openDayModal(emp, date){
   }
 
   // 항목별로 "작업단계 관리 모드"가 켜져있는지 기억해두는 곳 (idx -> true/false). 평소엔 꺼져있음.
-  let stageManageOpen = {};
 
   const dowLabel = DOW_LABELS[(date.getDay()+6)%7];
   const title = `${emp.name} · ${date.getMonth()+1}.${date.getDate()}(${dowLabel})`; // 팝업 맨 위 제목 글자
@@ -1528,37 +1527,24 @@ function openDayModal(emp, date){
         </div>
 
         <div class="field">
-          <div class="field-label-row">
-            <label style="margin-bottom:0;">작업단계 <span style="font-weight:400;color:var(--muted);">(눌러서 선택/해제)</span></label>
-            <div style="display:flex; gap:10px;">
-              <button type="button" class="manage-btn" data-config-toggle="${idx}">프로젝트 단계 설정</button>
-              <button type="button" class="manage-btn" data-manage-toggle="${idx}">${stageManageOpen[idx] ? '완료' : '관리'}</button>
-            </div>
-          </div>
-
-          <!-- ★ 프로젝트 "전체 단계 구성" 등록 패널 - 진행률 분모(n)를 정확히 계산하기 위해 한 번 등록해두는 곳.
-               한 번 등록해두면 다음부터 그 프로젝트명을 적을 때 자동으로 기억되어, 매번 다시 고를 필요 없음. -->
-          <div class="manage-panel" id="stageConfigPanel-${idx}" style="display:none;margin-bottom:8px;">
-            <div class="hint-text" style="margin-bottom:6px;">
-              이 프로젝트가 사용할 <b>전체</b> 단계를 골라주세요. 여기서 고른 개수가 진행률 계산의 분모(n)가 되고,
-              아직 입력 안 한 단계는 0%로 계산됩니다. (한 번만 설정하면 다음부터 자동으로 적용됨)
-            </div>
-            <div class="tag-wrap" id="stageConfigPicker-${idx}"></div>
-            <button type="button" class="btn primary" data-config-save="${idx}" style="padding:6px 14px;font-size:12px;margin-top:6px;">이 구성으로 저장</button>
-          </div>
-
-          <div class="tag-wrap" id="stagePicker-${idx}"></div>
-          <div class="manage-add-row" id="stageManageRow-${idx}" style="margin-top:8px;${stageManageOpen[idx] ? '' : ' display:none;'}">
-            <input type="text" id="newStageInput-${idx}" placeholder="새 작업단계명 추가 (예: 모델링작업)" />
+          <label>프로젝트 진행 구성 <span style="font-weight:400;color:var(--muted);">(눌러서 이 프로젝트에 포함/제외, ×로 완전 삭제)</span></label>
+          <div class="tag-wrap" id="stageConfigPicker-${idx}"></div>
+          <div class="manage-add-row" style="margin-top:8px;">
+            <input type="text" id="newStageInput-${idx}" placeholder="프로젝트 진행 단계 추가 (예: 모델링작업)" />
             <button type="button" data-add-stage="${idx}">추가</button>
           </div>
         </div>
 
         <div class="field">
+          <label>프로젝트 진행 단계 <span style="font-weight:400;color:var(--muted);">(오늘 작업한 단계를 눌러서 선택/해제)</span></label>
+          <div class="tag-wrap" id="stagePicker-${idx}"></div>
+        </div>
+
+        <div class="field" style="margin-bottom:20px;">
           <label>내용 (선택)</label>
           <textarea data-field="content" data-idx="${idx}">${escapeHtml(it.content || '')}</textarea>
         </div>
-        <div class="field" style="max-width:120px;">
+        <div class="field" style="max-width:120px;margin-bottom:0;">
           <label>진행률 (%)</label>
           <input type="number" min="0" max="100" data-field="progress" data-idx="${idx}"
                  value="${it.progress ?? ''}" placeholder="선택입력" />
@@ -1617,148 +1603,122 @@ function openDayModal(emp, date){
   // 작업단계 단추들을 한 줄로 그려주는 함수.
   // - 클릭: 선택/해제 토글 (선택되면 파란색, 해제되면 흰색/회색)
   // - 길게 누르기(약 0.6초): 부서 공용 목록에서 그 단계를 완전히 삭제 (확인창 뜸)
+  // "프로젝트 진행 단계" - 오늘 작업한 단계를 고르는 단추들. 항상 "프로젝트 진행 구성"에 등록된 것만 나옴.
   function renderStagePicker(idx){
     const wrap = document.getElementById(`stagePicker-${idx}`);
     if(!wrap) return;
     const selected = items[idx].stages || [];
-    const managing = !!stageManageOpen[idx];
     const project = (items[idx].title || '').trim();
-    const registered = project ? projectOptions.projectStages[project] : null;
-    // [수정됨] 이 프로젝트에 "전체 단계"가 등록돼있으면 그 목록만 보여줌 (분모가 정확해짐).
-    // 등록 안 된 프로젝트(또는 프로젝트 미입력)는 예전처럼 부서 전체 목록을 보여줌.
-    const availableStages = (registered && registered.length > 0) ? registered : projectOptions.stages;
+    // 프로젝트가 있으면 그 프로젝트의 "진행 구성"에 등록된 단계만, 없으면(자유 메모) 부서 전체 목록을 보여줌
+    const availableStages = project
+      ? ((projectOptions.projectStages && projectOptions.projectStages[project]) || [])
+      : projectOptions.stages;
 
     if(availableStages.length === 0){
-      wrap.innerHTML = `<span class="hint-text">등록된 단계가 없습니다. 아래 "관리"를 눌러 추가해보세요.</span>`;
+      wrap.innerHTML = project
+        ? `<span class="hint-text">위 "프로젝트 진행 구성"에서 먼저 단계를 추가해주세요.</span>`
+        : `<span class="hint-text">등록된 단계가 없습니다.</span>`;
       return;
     }
 
-    // 관리 모드가 아닐 땐 예전처럼 단순 토글 단추, 관리 모드일 땐 단추 옆에 작은 × 삭제 버튼이 붙음
     wrap.innerHTML = availableStages.map(s => `
-      <span class="stage-chip${selected.includes(s) ? ' active' : ''}" data-stage-name="${escapeHtml(s)}">
-        ${escapeHtml(s)}
-        ${managing ? `<button type="button" class="stage-chip-del" data-del-stage="${escapeHtml(s)}">×</button>` : ''}
-      </span>
+      <button type="button" class="stage-chip${selected.includes(s) ? ' active' : ''}" data-stage-name="${escapeHtml(s)}">${escapeHtml(s)}</button>
     `).join('');
 
-    // 단추(칩) 몸통 클릭 = 즉시 선택 토글 (누르면 바로 선택, 다시 누르면 바로 해제)
-    wrap.querySelectorAll('.stage-chip').forEach(chip => {
-      chip.addEventListener('click', (e) => {
-        if(e.target.closest('.stage-chip-del')) return; // × 클릭은 삭제 핸들러가 따로 처리 (선택 토글 안 함)
-        const name = chip.dataset.stageName;
+    // 단추 클릭 = 즉시 선택 토글 (누르면 바로 선택, 다시 누르면 바로 해제)
+    wrap.querySelectorAll('.stage-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.stageName;
         const cur = items[idx].stages || [];
         items[idx].stages = cur.includes(name) ? cur.filter(s => s !== name) : [...cur, name];
         renderStagePicker(idx);
       });
     });
-    // 관리 모드일 때만 존재하는 × 버튼 - 부서 공용 목록에서 완전히 삭제
-    wrap.querySelectorAll('.stage-chip-del').forEach(btn => {
+  }
+
+  // "프로젝트 진행 구성" - 이 프로젝트가 쓸 전체 단계 목록. 항상 보이고, ×를 누르면 바로 삭제됨(부서 목록엔 남음).
+  // "프로젝트 진행 구성" - 부서 전체 단계 목록을 보여주고, 단추 몸통을 누르면 "이 프로젝트에 포함/제외"가 토글됨
+  // (포함=파란색, 제외=회색). ×를 누르면 그 단계 이름 자체가 부서 전체 목록에서 완전히 삭제됨(다른 프로젝트에서도 사라짐).
+  function renderStageConfigPicker(idx){
+    const wrap = document.getElementById(`stageConfigPicker-${idx}`);
+    if(!wrap) return;
+    const project = (items[idx].title || '').trim();
+    const included = project ? ((projectOptions.projectStages && projectOptions.projectStages[project]) || []) : [];
+
+    wrap.innerHTML = projectOptions.stages.length
+      ? projectOptions.stages.map(s => `
+          <span class="stage-chip${included.includes(s) ? ' active' : ''}" data-config-toggle-stage="${escapeHtml(s)}">
+            ${escapeHtml(s)}
+            <button type="button" class="stage-chip-del" data-config-del-stage="${escapeHtml(s)}">×</button>
+          </span>`).join('')
+      : `<span class="hint-text">아직 등록된 단계가 없습니다. 아래에서 추가해보세요.</span>`;
+
+    // 단추 몸통 클릭(× 제외) = 이 프로젝트에 포함/제외 토글
+    wrap.querySelectorAll('[data-config-toggle-stage]').forEach(chip => {
+      chip.addEventListener('click', async (e) => {
+        if(e.target.closest('.stage-chip-del')) return; // × 클릭은 삭제 핸들러가 따로 처리
+        if(!project){ showToast('먼저 프로젝트 타이틀을 입력해주세요'); return; }
+        const s = chip.dataset.configToggleStage;
+        if(!projectOptions.projectStages) projectOptions.projectStages = {};
+        const cur = projectOptions.projectStages[project] || [];
+        if(cur.includes(s)){
+          projectOptions.projectStages[project] = cur.filter(x => x !== s); // 제외 -> 회색으로
+          items.forEach(it => { // 오늘 선택돼있던(이 프로젝트) 항목에서도 함께 해제
+            if((it.title || '').trim() === project && it.stages) it.stages = it.stages.filter(x => x !== s);
+          });
+        } else {
+          projectOptions.projectStages[project] = [...cur, s]; // 포함 -> 파란색으로
+        }
+        await saveProjectOptions();
+        refreshItemsContainer();
+      });
+    });
+    // × 버튼 클릭 = 부서 전체 목록에서 완전히 삭제 (프로젝트 이름이 없어도 가능)
+    wrap.querySelectorAll('[data-config-del-stage]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const val = btn.dataset.delStage;
-        if(!confirm(`"${val}" 단계를 부서 목록에서 완전히 삭제할까요? (다른 프로젝트에서도 이 단추가 함께 사라집니다)`)) return;
+        const val = btn.dataset.configDelStage;
+        if(!confirm(`"${val}" 단계를 부서 전체 목록에서 완전히 삭제할까요? (모든 프로젝트에서 사라집니다)`)) return;
         projectOptions.stages = projectOptions.stages.filter(s => s !== val);
-        items.forEach(it => { if(it.stages) it.stages = it.stages.filter(s => s !== val); }); // 선택돼있던 항목에서도 함께 제거
-        // 어떤 프로젝트의 "등록된 전체 단계"에 이 이름이 들어있었으면 거기서도 함께 제거
         if(projectOptions.projectStages){
           Object.keys(projectOptions.projectStages).forEach(p => {
             projectOptions.projectStages[p] = projectOptions.projectStages[p].filter(s => s !== val);
           });
         }
+        items.forEach(it => { if(it.stages) it.stages = it.stages.filter(s => s !== val); });
         await saveProjectOptions();
         refreshItemsContainer();
       });
     });
   }
 
-  // ★ "전체단계 등록/수정" 패널 - 이 프로젝트가 쓸 전체 단계를 체크해서 저장하는 곳 (분모 n을 정확히 하기 위함)
-  function renderStageConfigPicker(idx){
-    const wrap = document.getElementById(`stageConfigPicker-${idx}`);
-    if(!wrap) return;
-    const project = (items[idx].title || '').trim();
-    if(!project) return;
-    if(!items[idx]._configDraft){
-      // 패널을 처음 열 때, 이미 등록된 값이 있으면 그걸로 시작하고 없으면 빈 배열로 시작
-      items[idx]._configDraft = [...((projectOptions.projectStages && projectOptions.projectStages[project]) || [])];
-    }
-    const draft = items[idx]._configDraft;
-
-    wrap.innerHTML = projectOptions.stages.length
-      ? projectOptions.stages.map(s => `
-          <span class="stage-chip${draft.includes(s) ? ' active' : ''}" data-config-stage-name="${escapeHtml(s)}">${escapeHtml(s)}</span>
-        `).join('')
-      : `<span class="hint-text">부서에 등록된 단계가 먼저 필요해요. 아래 "관리"에서 만들어주세요.</span>`;
-
-    wrap.querySelectorAll('.stage-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const name = chip.dataset.configStageName;
-        items[idx]._configDraft = draft.includes(name) ? draft.filter(s => s !== name) : [...draft, name];
-        renderStageConfigPicker(idx);
-      });
-    });
-  }
-
-  // "추가" 버튼(또는 입력창에서 Enter)을 누르면 부서 공용 목록에 새 단계를 추가하고, 이 항목에도 바로 선택해줌
+  // "추가" 버튼(또는 입력창에서 Enter) - 부서 공용 단계 목록에 새 이름을 추가함.
+  // 프로젝트 타이틀이 적혀있으면, 그 프로젝트에도 바로 "포함" 상태로 반영하고 오늘 단계로도 선택해줌.
   async function addStageFor(idx){
     const input = document.getElementById(`newStageInput-${idx}`);
     const val = input.value.trim();
     if(!val) return;
     if(projectOptions.stages.includes(val)){ showToast('이미 있는 단계입니다'); return; }
-    projectOptions.stages.push(val);
+    projectOptions.stages.push(val); // 부서 공용 풀에 추가
+
+    const project = (items[idx].title || '').trim();
+    if(project){
+      if(!projectOptions.projectStages) projectOptions.projectStages = {};
+      if(!projectOptions.projectStages[project]) projectOptions.projectStages[project] = [];
+      projectOptions.projectStages[project].push(val); // 이 프로젝트엔 바로 포함시킴
+      if(!items[idx].stages) items[idx].stages = [];
+      items[idx].stages.push(val); // 오늘 작업단계로도 바로 선택
+    }
     await saveProjectOptions();
-    if(!items[idx].stages) items[idx].stages = [];
-    items[idx].stages.push(val); // 새로 추가한 단계를 이 항목에 바로 선택 상태로 반영
     refreshItemsContainer();
   }
 
   // 항목 입력창(프로젝트/내용/진행률)에 반응하거나, 단계 선택기·추가 버튼을 누를 때 반응하도록 이벤트를 연결
   function bindItemEvents(){
     document.querySelectorAll('[data-field="title"]').forEach(el => {
-      el.addEventListener('input', () => {
-        const idx = el.dataset.idx;
-        items[idx].title = el.value;
-        delete items[idx]._configDraft; // 프로젝트명이 바뀌면 예전 프로젝트의 구성 초안은 버림 (다음에 열 때 새로 불러옴)
-      });
-      // 프로젝트명 입력을 마치면(포커스를 벗어나면) "전체단계 등록" 버튼 문구/노출 여부가 바뀔 수 있으므로 다시 그림
+      el.addEventListener('input', () => { items[el.dataset.idx].title = el.value; });
+      // 프로젝트명 입력을 마치면(포커스를 벗어나면) "프로젝트 진행 구성" 영역이 보이거나 내용이 바뀔 수 있으므로 다시 그림
       el.addEventListener('change', () => refreshItemsContainer());
-    });
-    // "관리" / "완료" 버튼 - 누를 때마다 그 항목의 작업단계 관리 모드를 켜고 끔
-    document.querySelectorAll('[data-manage-toggle]').forEach(el => {
-      el.addEventListener('click', () => {
-        const idx = el.dataset.manageToggle;
-        stageManageOpen[idx] = !stageManageOpen[idx];
-        refreshItemsContainer(); // 버튼 글자("관리"↔"완료")와 ×표시/추가입력창 노출 여부를 한 번에 다시 그림
-      });
-    });
-    // "프로젝트 단계 설정" 버튼 - 이 프로젝트의 전체 단계 구성 패널을 열고/닫음 (항상 보임)
-    document.querySelectorAll('[data-config-toggle]').forEach(el => {
-      el.addEventListener('click', () => {
-        const idx = el.dataset.configToggle;
-        const project = (items[idx].title || '').trim();
-        if(!project){ showToast('먼저 프로젝트명을 입력해주세요'); return; }
-        const panel = document.getElementById(`stageConfigPanel-${idx}`);
-        const willOpen = panel.style.display === 'none';
-        panel.style.display = willOpen ? '' : 'none';
-        if(willOpen) renderStageConfigPicker(idx);
-      });
-    });
-    // "이 구성으로 저장" 버튼 - 지금 체크된 단계들을 이 프로젝트의 "전체 단계"로 등록(또는 수정)함
-    document.querySelectorAll('[data-config-save]').forEach(el => {
-      el.addEventListener('click', async () => {
-        const idx = el.dataset.configSave;
-        const project = (items[idx].title || '').trim();
-        if(!project) return;
-        const draft = items[idx]._configDraft || [];
-        if(!projectOptions.projectStages) projectOptions.projectStages = {};
-        if(draft.length === 0){
-          delete projectOptions.projectStages[project]; // 아무것도 선택 안 하고 저장 -> 등록 해제(예전 방식으로 되돌아감)
-        } else {
-          projectOptions.projectStages[project] = draft;
-        }
-        await saveProjectOptions();
-        showToast(`"${project}" 프로젝트의 단계 구성을 저장했습니다`);
-        refreshItemsContainer();
-      });
     });
     document.querySelectorAll('[data-field="content"]').forEach(el => {
       el.addEventListener('input', () => { items[el.dataset.idx].content = el.value; });
@@ -1786,8 +1746,11 @@ function openDayModal(emp, date){
         addStageFor(el.id.replace('newStageInput-', ''));
       });
     });
-    // 각 항목의 단계 선택기(선택됨/선택가능)를 그려줌
-    items.forEach((it, idx) => renderStagePicker(idx));
+    // 각 항목의 "프로젝트 진행 구성"(항상 보임)과 "프로젝트 진행 단계"(오늘 선택) 두 영역을 그려줌
+    items.forEach((it, idx) => {
+      renderStageConfigPicker(idx);
+      renderStagePicker(idx);
+    });
   }
 
   // 항목을 추가/삭제했을 때, 항목 목록 부분만 새로 그리고 이벤트를 다시 연결
