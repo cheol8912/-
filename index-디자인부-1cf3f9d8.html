@@ -1236,9 +1236,53 @@ function renderBody(){
         // 아직 아무것도 입력 안 된 칸에는 흐린 "+ 항목 추가" 안내 글자를 보여줌 (CSS: .empty-hint)
         td.innerHTML = `<div class="empty-hint">+ 항목 추가</div>`;
       } else {
-        const shown = items.slice(0, 2); // 칸 안에는 최대 2개 항목만 미리보기로 보여줌
-        // ★ "타이틀: 내용" 형식으로 표시 (itemDisplayLabel 함수가 조합해줌). 팝업을 열면 타이틀/내용을 각각 볼 수 있음
-        let html = shown.map(it => {
+        // ★ [수정됨] 같은 프로젝트(타이틀)에 대해 여러 단계(모델링/도면/랜더링 등)를 각각 따로 입력해두면,
+        // 예전엔 "프로젝트 - 모델링 100%" / "프로젝트 - 도면 100%" / "프로젝트 - 랜더링 100%" 처럼
+        // 프로젝트명이 반복되는 3줄로 나뉘어 보였습니다. 이제는 같은 프로젝트끼리는 한 줄로 모아서
+        // "프로젝트 - 모델링 100%, 도면 100%, 랜더링 100%" 형태로 보여줍니다.
+        // (다른 프로젝트는 여전히 줄이 따로 나뉘어 보입니다 - 프로젝트명이 다르면 합치지 않음)
+
+        // (1) 프로젝트별로 "단계가 있는 항목"들을 미리 모아둠 (title -> 그 프로젝트의 단계 항목 배열)
+        const stageGroups = new Map();
+        items.forEach(it => {
+          const t = (it.title || '').trim();
+          const stages = it.stage ? String(it.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+          if(t && stages.length > 0){
+            if(!stageGroups.has(t)) stageGroups.set(t, []);
+            stageGroups.get(t).push(it);
+          }
+        });
+
+        // (2) 원래 항목 순서를 그대로 따라가면서, "단계가 있는 프로젝트"는 그 프로젝트가 처음 나올 때
+        // 딱 한 번만 (그 프로젝트의 모든 단계를 합쳐서) 한 줄로 만들고, 그 다음에 또 나오는 같은 프로젝트의
+        // 단계 항목은 이미 합쳐서 보여줬으므로 건너뜀. 단계가 없는 항목(제목만 있거나 메모만 있는 경우)은
+        // 예전처럼 한 줄씩 그대로 보여줌.
+        const renderedTitles = new Set();
+        let html = items.map(it => {
+          const title = (it.title || '').trim();
+          const stages = it.stage ? String(it.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+
+          if(title && stages.length > 0){
+            if(renderedTitles.has(title)) return ''; // 이미 이 프로젝트는 한 줄로 합쳐서 출력했으므로 건너뜀
+            renderedTitles.add(title);
+            const group = stageGroups.get(title);
+            // 이 프로젝트의 단계들을 "단계명 진행률%" 형태로 각각 만들고, 콤마로 이어붙임
+            const segments = group.map(g => {
+              const gStages = g.stage ? String(g.stage).split(STAGE_SEP).map(s => s.trim()).filter(Boolean) : [];
+              const stageLabel = gStages.join(' / ');
+              const contentPart = (g.content || '').trim() ? `(${g.content.trim()})` : ''; // 내용이 있으면 괄호로 덧붙임
+              const pct = (g.progress !== null && g.progress !== undefined) ? ` ${g.progress}%` : '';
+              return `${stageLabel}${contentPart}${pct}`;
+            });
+            const label = `${title} - ${segments.join(', ')}`;
+            return `
+          <div class="log-item">
+            <span class="dot">·</span>
+            <span class="txt" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+          </div>`;
+          }
+
+          // 단계가 없는 항목(제목만 있거나, 메모/내용만 있는 경우)은 예전 방식 그대로 한 줄씩 표시
           const label = itemDisplayLabel(it);
           return `
           <div class="log-item">
@@ -1246,10 +1290,7 @@ function renderBody(){
             <span class="txt" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
             ${it.progress !== null && it.progress !== undefined ? `<span class="pct">${it.progress}%</span>` : ''}
           </div>`;
-        }).join('');
-        if(items.length > 2){
-          html += `<div class="more-link">+${items.length - 2}개 더보기</div>`;
-        }
+        }).filter(Boolean).join('');
         td.innerHTML = html;
       }
       tr.appendChild(td);
