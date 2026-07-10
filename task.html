@@ -164,7 +164,7 @@
     display:inline-flex; align-items:center; gap:6px;
     padding:7px 16px;
     border:1px solid #F3C1D3;      /* 연한 핑크 테두리 */
-    border-radius:7px;              /* 다른 버튼들(수정완료/+추가/토글)과 동일한 라운드 사각형으로 통일 */
+    border-radius:7px;              /* 다른 버튼들(실행완료/+추가/토글)과 동일한 라운드 사각형으로 통일 */
     background:#FFF3F7;             /* 아주 연한 핑크 배경 */
     color:#D6336C;                  /* 진한 핑크(로즈) 글자색 */
     font-size:13px;
@@ -218,7 +218,9 @@
   }
 
   /* ========================================================================
-     ▣ 툴바 - "진행중 / 완료" 토글 버튼이 있는 줄 (main 맨 위, 표 바로 위)
+     ▣ 툴바 - 검색창이 있는 줄 (main 맨 위, 표 바로 위)
+     ★ [수정됨] 예전엔 여기(툴바)에 "전체/진행중/완료" 토글 버튼이 있었는데, 그 토글을 없애고
+     대신 표 헤더의 "처리" 자리에 세그먼트 필터(.filter-pill)를 넣는 방식으로 바꿨습니다.
      ======================================================================== */
   .toolbar-nav{
     display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
@@ -226,33 +228,7 @@
   }
   .toolbar-nav .nav-group{ display:flex; align-items:center; gap:8px; }
 
-  /* "진행중 / 완료" 두 버튼을 하나의 테두리로 감싸서 "묶인 토글"처럼 보이게 하는 바깥 박스 */
-  .status-toggle{
-    display:flex;
-    border:1px solid var(--line);
-    border-radius:7px;
-    overflow:hidden; /* 안쪽 버튼의 모서리도 이 박스의 둥근 모서리를 따라가도록 잘라냄 */
-  }
-  /* 토글 안의 버튼 하나하나(진행중 버튼, 완료 버튼) 공통 모양 */
-  .status-toggle button{
-    background:#fff;
-    border:none;
-    color:var(--ink);
-    font-size:13px;
-    font-weight:600;
-    padding:8px 16px;
-    cursor:pointer;
-    font-family:var(--sans);
-    transition:background .15s;
-    white-space:nowrap; /* "진행중"/"완료" 글자가 좁은 화면에서 두 줄로 쪼개지지 않도록 함 */
-  }
-  .status-toggle button:first-child{ border-right:1px solid var(--line); } /* 두 버튼 사이에 얇은 구분선 */
-  .status-toggle button:hover{ background:var(--paper); }
-  /* 현재 선택된(활성화된) 쪽 버튼 - 배경을 포인트 초록색으로, 글자는 흰색으로 강조 */
-  .status-toggle button.active{ background:var(--blueprint); color:#fff; }
-  .status-toggle button.active:hover{ background:var(--blueprint-strong); }
-
-  /* ★ 검색창 - 진행중/완료 탭 각각에서 프로젝트명·수정사항 글자로 필터링할 때 쓰는 입력창.
+  /* ★ 검색창 - 프로젝트명·수정사항 글자로 필터링할 때 쓰는 입력창.
      탭을 전환해도 서로의 검색어를 기억하도록, JS에서 탭별로 검색어를 따로 저장해둡니다
      (예: 진행중 탭에서 "GS-W805"를 검색해두고 완료 탭으로 갔다가 다시 돌아와도 검색어가 남아있음). */
   .search-box{
@@ -261,7 +237,7 @@
     border-radius:7px;           /* 다른 버튼들과 통일된 라운드 사각형 */
     background:#fff;
     padding:0 10px;
-    height:34px;                  /* status-toggle 버튼과 높이가 비슷하게 맞춘 값 */
+    height:34px;
   }
   .search-box svg{ width:14px; height:14px; color:var(--muted); flex-shrink:0; }
   .search-box input{
@@ -325,7 +301,45 @@
   }
   .col-date{ width:150px; }             /* "요청일자" 열의 가로 폭 */
   .col-due{ width:150px; }              /* "마감일자" 열의 가로 폭 */
-  .col-action{ width:100px; text-align:center; padding:10px !important; } /* "처리" 열(버튼/배지가 들어가는 칸) */
+  .col-action{ width:160px; text-align:center; padding:8px !important; } /* "처리" 열 - B안(슬라이딩 인디케이터)은 폭이 좁아서 줄임 */
+
+  /* ========================================================================
+     ★ [수정됨] 전체/대기/완료 필터를 "B안(슬라이딩 인디케이터)" 스타일로 교체.
+     연회색 트랙 위에 지금 선택된 칸만 흰 배경(+은은한 그림자)이 깔려서 붕 떠 보이고,
+     선택 안 된 칸은 배경 없이 흐린 회색 글자로 표시됨. 대각선 컷 방식보다 훨씬 깔끔함.
+     좌우 여백은 최소화해서(padding 0 9px) 버튼이 글자 폭에 딱 맞게 붙도록 함.
+     ======================================================================== */
+  .filter-pill{
+    display:inline-flex;
+    align-items:center;
+    height:30px;
+    background:#E9ECEA;     /* 트랙(바깥) 배경 - 연회색 */
+    border-radius:999px;
+    padding:3px;              /* 트랙 안쪽 여백 (버튼과 트랙 테두리 사이 간격) */
+    gap:2px;
+  }
+  .filter-pill button{
+    position:relative;
+    border:none;
+    background:transparent;   /* 평소(선택 안 됐을 때)엔 배경 없음 */
+    border-radius:999px;
+    height:100%;
+    padding:0 9px;             /* ★ 좌우 여백 최소화 - 글자 폭에 딱 맞게 붙도록 줄인 값 */
+    font-family:var(--sans);
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);        /* 선택 안 된 칸은 흐린 회색 글자 */
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .15s, color .15s;
+  }
+  /* 지금 선택된 칸 - 흰 배경 + 은은한 그림자로 붕 떠 보이게 하고, 글자는 진한 초록으로 강조 */
+  .filter-pill button.active{
+    background:#fff;
+    color:var(--blueprint);
+    font-weight:700;
+    box-shadow:0 1px 3px rgba(0,0,0,0.14);
+  }
 
   /* ★★★ "프로젝트명 / 수정사항" 칸에 실제로 글자를 입력하는 <input> 상자 스타일 ★★★
      이 칸은 얼핏 보면 그냥 표의 글자처럼 보이지만, 실제로는 클릭하면 바로 타이핑할 수 있는
@@ -359,33 +373,39 @@
      ▣ 버튼들
      ======================================================================== */
 
-  /* "수정완료" 버튼 (진행중 탭의 각 행 오른쪽에 있는 초록 버튼).
-     누르면 해당 항목이 "완료" 상태로 바뀌면서 진행중 목록에서 사라집니다. */
+  /* "대기중" 버튼 (아직 안 끝난 항목 오른쪽에 있는 버튼. 누르면 completeRecord()가 실행되어 완료 처리됨).
+     ★ [수정됨] 꽉 찬 초록 배경이었을 때 "이미 완료된 것 같은" 느낌을 줘서, 아직 안 끝난 항목인데도
+     끝난 것처럼 보이는 문제가 있었습니다. 그래서 기본 모양은 "테두리만 있는 초록(아웃라인)"으로 바꿔서
+     "누르면 되는 액션 버튼"이라는 느낌이 들도록 했고, 실제로 완료된 항목에는 아래 .solid 버전(꽉 찬 초록,
+     클릭 안 됨, 문구는 "실행완료")을 따로 만들어서 "이건 진짜 끝났다"를 표시할 때만 쓰도록 구분했습니다.
+     ★ "대기중"(3글자)과 "실행완료"(4글자)는 글자 수가 달라서 그냥 두면 버튼 크기가 서로 달라 보이는데,
+     width를 고정값으로 딱 정해줘서 두 버튼이 항상 똑같은 크기로 보이도록 함. */
   .done-btn{
-    background:var(--blueprint); /* 버튼 배경 = 포인트 초록색 */
-    color:#fff;
-    border:none;
+    width:76px;                    /* 고정 너비 - "대기중"/"실행완료" 둘 다 이 안에 딱 맞게 들어감 */
+    background:#fff;              /* 기본(미완료) = 흰 배경 */
+    color:var(--blueprint);        /* 초록 글자 */
+    border:1.5px solid var(--blueprint); /* 초록 테두리만 있는 "아웃라인" 스타일 */
     font-size:12.5px;
-    padding:7px 12px;
+    padding:6.5px 0;                /* 좌우 padding은 0으로 두고, 위에서 정한 고정 width로 가운데 정렬되게 함 */
     border-radius:7px;
     cursor:pointer;
     font-weight:600;
     font-family:var(--sans);
-    white-space:nowrap; /* "수정완료" 글자가 좁은 칸에서 줄바꿈되지 않도록 함 */
+    text-align:center;
+    white-space:nowrap; /* "대기중"/"실행완료" 글자가 좁은 칸에서 줄바꿈되지 않도록 함 */
   }
-  .done-btn:hover{ background:var(--blueprint-strong); } /* 마우스를 올리면 더 진한 초록색으로 */
+  .done-btn:hover{ background:var(--blueprint-bg); } /* 마우스를 올리면 연한 초록 배경으로 살짝 강조 */
 
-  /* "완료" 탭에서 각 행 오른쪽에 표시되는 동그란 배지(라벨). 버튼이 아니라 그냥 상태 표시라서
-     클릭할 수 없고(cursor 없음), 연한 민트 배경 + 초록 글자로 "완료됨"을 나타냄. */
-  .status-badge{
-    display:inline-block;
-    padding:4px 12px;
-    border-radius:20px;   /* 숫자를 크게 줘서 양쪽 끝이 완전히 둥근 "알약" 모양으로 만듦 */
-    font-size:12px;
-    font-weight:600;
-    background:var(--blueprint-bg);
-    color:var(--blueprint);
+  /* ★ [추가됨] 이미 완료된 항목("전체" 탭에서 완료된 항목을 보여줄 때)에 쓰는 "꽉 찬 초록" 버전.
+     생김새는 버튼이지만 클릭할 수 없음(더 이상 할 동작이 없으므로) - cursor:default로 손가락 모양 없앰.
+     width는 위 .done-btn과 동일한 값을 그대로 물려받아서 크기가 항상 같음. */
+  .done-btn.solid{
+    background:var(--blueprint);
+    color:#fff;
+    cursor:default;
+    opacity:1; /* disabled 버튼은 브라우저가 기본으로 흐리게(반투명) 처리하는데, 그거 없이 선명하게 유지 */
   }
+  .done-btn.solid:hover{ background:var(--blueprint); } /* solid 버튼은 마우스 올려도 색이 안 바뀌도록(클릭 가능한 게 아니라는 신호) */
 
   /* 표에 항목이 하나도 없을 때(진행중 항목 없음 / 완료 항목 없음) 표시되는 안내 문구 스타일 */
   .empty{
@@ -451,11 +471,15 @@
 
     .toolbar-nav{ gap:8px; }
     .toolbar-nav .nav-group{ flex-wrap:wrap; gap:8px; }
-    .status-toggle button{ padding:8px 14px; font-size:12.5px; }
-    /* 검색창은 토글 버튼과 한 줄에 억지로 끼워넣지 않고, 자리가 부족하면 자연스럽게 다음 줄로 내려가
+    /* 검색창은 새로고침 버튼과 한 줄에 억지로 끼워넣지 않고, 자리가 부족하면 자연스럽게 다음 줄로 내려가
        "전체 폭"을 다 쓰도록 함 (억지로 줄바꿈되어 글자가 잘리는 것보다 훨씬 보기 좋음) */
     .search-box{ flex:1 1 100%; }
     .search-box input{ width:100%; }
+
+    /* 좁은 화면에서는 표 헤더 안의 전체/대기/완료 필터도 살짝 작게 줄여서 "처리" 열이 너무 넓어지지 않게 함 */
+    .col-action{ width:135px; }
+    .filter-pill{ height:26px; padding:2px; }
+    .filter-pill button{ font-size:11px; padding:0 7px; }
   }
 </style>
 </head>
@@ -497,17 +521,12 @@
        생김새(크기/색/간격)를 바꾸고 싶으면 위 CSS의 .dept-title 규칙을 수정하면 됩니다. -->
   <div class="dept-title" id="deptTitle">기술전략부</div>
 
-  <!-- "진행중 / 완료" 토글 버튼 줄.
-       왼쪽 = 진행중/완료 토글, 오른쪽 = 새로고침 버튼 (표의 "처리" 열 바로 위쪽에 오도록 오른쪽 정렬).
-       toolbar-nav에 justify-content:space-between이 이미 걸려있어서, 그 안에 div를 하나 더
-       추가하기만 하면 자동으로 반대편 끝(오른쪽)으로 밀려납니다. -->
+  <!-- 검색창(왼쪽) + 새로고침 버튼(오른쪽) 줄.
+       ★ [수정됨] 예전엔 여기에 전체/진행중/완료 토글 버튼이 있었는데, 이제 그 필터 기능은
+       아래 표 헤더의 "처리" 자리에 있는 세그먼트 필터(.filter-pill)로 옮겼습니다. -->
   <div class="toolbar-nav">
     <div class="nav-group">
-      <div class="status-toggle">
-        <button id="tabActive" class="active" onclick="switchTab('active')">진행중</button>
-        <button id="tabDone" onclick="switchTab('done')">완료</button>
-      </div>
-      <!-- 검색창 - 프로젝트명/수정사항 글자로 필터링. 진행중/완료 탭 각각 검색어를 따로 기억함(JS 참고). -->
+      <!-- 검색창 - 프로젝트명/수정사항 글자로 필터링. 전체/진행중/완료 탭 각각 검색어를 따로 기억함(JS 참고). -->
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
@@ -517,8 +536,7 @@
       </div>
     </div>
     <!-- 새로고침 버튼 - 누르면 JS의 refreshNow() 함수가 실행되어 서버에서 최신 목록을 다시 불러옴.
-         다른 동료가 방금 추가/완료 처리한 내용을 내 화면에도 반영하고 싶을 때 누르면 됨.
-         표의 "처리" 열(맨 오른쪽 열) 바로 위쪽에 오도록 여기 오른쪽 끝에 배치함. -->
+         다른 동료가 방금 추가/완료 처리한 내용을 내 화면에도 반영하고 싶을 때 누르면 됨. -->
     <button class="refresh-btn" id="refreshBtn" onclick="refreshNow()" title="새로고침">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M23 4v6h-6"></path>
@@ -547,7 +565,15 @@
           <th style="text-align:center;">프로젝트명 / 수정사항</th>
           <th class="col-date">요청일자</th>
           <th class="col-due">마감일자</th>
-          <th class="col-action center">처리</th>
+          <th class="col-action center">
+            <!-- ★ [추가됨] "처리" 라는 고정 글자 대신, 여기에 전체/대기/완료 필터를 직접 넣음.
+                 이 세 칸 중 하나를 누르면 switchTab()이 실행되어 표에 보이는 항목이 바뀝니다. -->
+            <div class="filter-pill" id="filterPill">
+              <button id="tabAll" class="active" onclick="switchTab('all')">전체</button>
+              <button id="tabActive" onclick="switchTab('active')">대기</button>
+              <button id="tabDone" onclick="switchTab('done')">완료</button>
+            </div>
+          </th>
         </tr>
       </thead>
       <tbody id="tbody">
@@ -610,14 +636,14 @@ async function sb(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-// currentTab: 지금 화면에 "진행중"을 보여주고 있는지 "완료"를 보여주고 있는지 기억하는 변수
-let currentTab = 'active';
+// currentTab: 지금 화면에 "전체"/"진행중"/"완료" 중 무엇을 보여주고 있는지 기억하는 변수
+let currentTab = 'all';
 // records: Supabase에서 불러온 모든 업무 항목을 담아두는 배열(목록). 화면을 다시 그릴 때마다 이 배열을 사용함
 let records = [];
-// 진행중 탭과 완료 탭이 "각자" 검색어를 따로 기억하도록 만든 객체.
+// 전체/진행중/완료 탭이 "각자" 검색어를 따로 기억하도록 만든 객체.
 // 예: 진행중 탭에서 "GS-W805"라고 검색해두고 완료 탭으로 넘어갔다가 다시 진행중 탭으로 돌아와도
 // 검색어가 그대로 남아있게 하기 위함 (하나의 변수만 쓰면 탭을 바꿀 때 서로 검색어를 덮어써버림)
-let searchQuery = { active: '', done: '' };
+let searchQuery = { all: '', active: '', done: '' };
 
 // ----------------------------------------------------------------------------
 // ▣ 헤더의 실시간 시계 - "2026-07-06 15:54:01" 처럼 초 단위까지 표시하고, 1초마다 갱신함
@@ -663,16 +689,17 @@ function setSyncNote(msg, isError=false){
 }
 
 // ----------------------------------------------------------------------------
-// ▣ "진행중 / 완료" 토글 버튼을 눌렀을 때 실행되는 함수
-// tab: 'active'(진행중) 또는 'done'(완료)
+// ▣ "전체 / 대기 / 완료" 세그먼트 필터를 눌렀을 때 실행되는 함수
+// tab: 'all'(전체) / 'active'(진행중) / 'done'(완료)
 // ----------------------------------------------------------------------------
 function switchTab(tab){
   currentTab = tab; // 지금 어떤 탭을 보고 있는지 기억해둠 (render() 함수가 이 값을 참고함)
-  // 두 버튼 중 지금 선택된 쪽에만 "active"라는 class를 붙여서 초록색으로 강조되게 함
+  // 세 버튼 중 지금 선택된 것에만 "active"라는 class를 붙여서 초록색으로 강조되게 함
+  document.getElementById('tabAll').classList.toggle('active', tab==='all');
   document.getElementById('tabActive').classList.toggle('active', tab==='active');
   document.getElementById('tabDone').classList.toggle('active', tab==='done');
-  // "완료" 탭에서는 새 항목을 추가할 필요가 없으므로 "+ 추가" 버튼을 숨김
-  document.getElementById('addRowBtn').style.display = tab === 'active' ? 'block' : 'none';
+  // "완료" 탭에서는 새 항목을 추가할 필요가 없으므로 "+ 추가" 버튼을 숨김 (전체/진행중 탭에서는 보임)
+  document.getElementById('addRowBtn').style.display = tab === 'done' ? 'none' : 'block';
   // 방금 선택한 탭이 예전에 검색해뒀던 검색어를 검색창에 다시 채워넣음 (탭마다 검색어를 따로 기억하기 위함)
   document.getElementById('searchInput').value = searchQuery[tab];
   render(); // 화면의 표 내용을 다시 그림 (선택된 탭에 맞는 항목만 보이도록)
@@ -768,10 +795,11 @@ async function updateField(id, field, value){
 }
 
 // ----------------------------------------------------------------------------
-// ▣ "수정완료" 버튼을 눌렀을 때 실행되는 함수
+// ▣ 행의 "대기중" 버튼을 눌렀을 때 실행되는 함수
 // - 해당 항목의 상태(status)를 '완료'로 바꾸고, 완료된 시각(completed_at)을 지금 시각으로 기록함
-// - 완료로 바뀐 항목은 "진행중" 목록에서는 더 이상 안 보이고, "완료" 탭에서만 보이게 됨
+// - 완료로 바뀐 항목은 "대기" 탭에서는 더 이상 안 보이고, "완료" 탭에서만 보이게 됨
 //   (되돌리는 기능은 의도적으로 만들지 않았음 - 완료는 최종 상태로 취급)
+// - 완료된 항목의 버튼은 화면에서 "실행완료"라는 문구로 바뀌어서(클릭 안 됨) 보여집니다.
 // ----------------------------------------------------------------------------
 async function completeRecord(id){
   try{
@@ -784,8 +812,8 @@ async function completeRecord(id){
         completed_at: new Date().toISOString() // 지금 이 순간의 정확한 시각을 함께 저장해둠 (기록용)
       })
     });
-    await loadRecords(); // 목록을 다시 불러오면, 이 항목은 이제 "완료" 상태이므로 진행중 탭에서 자동으로 사라짐
-    setSyncNote('수정완료 처리됨');
+    await loadRecords(); // 목록을 다시 불러오면, 이 항목은 이제 "완료" 상태이므로 대기 탭에서 자동으로 사라짐
+    setSyncNote('완료 처리됨');
   }catch(err){
     console.error(err);
     setSyncNote('처리 실패: ' + err.message, true);
@@ -819,43 +847,23 @@ function sortByDueDate(list){
 }
 
 // ----------------------------------------------------------------------------
-// ▣ 표 내용을 실제로 화면에 그리는(다시 채워 넣는) 함수
-// - records 배열 전체 중에서, currentTab에 맞는 항목(진행중 또는 완료)만 골라서(filter) 보여줌
-// - 검색창에 글자가 입력되어 있으면, 프로젝트명/수정사항에 그 글자가 포함된 항목만 한 번 더 걸러냄
-// - "진행중" 탭은 마감일자가 빠른 순으로 정렬해서 보여주고, "완료" 탭은 기존 방식(작성순) 그대로 둠
-// - "진행중" 탭일 때는 각 줄을 <input> 입력칸으로 그려서 바로 타이핑/수정할 수 있게 하고,
-//   "완료" 탭일 때는 더 이상 수정할 수 없도록 그냥 읽기 전용 글자(<span>)로 그림
+// ▣ 표의 한 줄(<tr>)을 만들어주는 함수 - "전체" 탭에서는 진행중/완료 항목이 한 표에 섞여서 나오기 때문에,
+// 항목 하나하나마다 "이 줄을 편집 가능하게 그릴지(readOnly=false), 완료된 걸로 그릴지(readOnly=true)"를
+// 따로 정해줘야 합니다. 그래서 이 부분을 별도 함수로 분리해서, render()에서 필요할 때마다 불러 씀.
+// readOnly가 false면: 입력칸 + "실행완료"(아웃라인) 버튼 / true면: 읽기전용 글자 + 완료(꽉 찬 초록) 버튼
 // ----------------------------------------------------------------------------
-function render(){
-  const tbody = document.getElementById('tbody');
-  // currentTab이 'active'면 status가 '진행중'인 것만, 아니면 '완료'인 것만 골라냄
-  let filtered = records.filter(r => currentTab === 'active' ? r.status === '진행중' : r.status === '완료');
-
-  // 검색어가 있으면(공백만 입력한 경우는 무시) 프로젝트명/수정사항에 그 글자가 포함된 것만 남김
-  // toLowerCase()를 양쪽 다 적용해서 대소문자를 구분하지 않고 검색되도록 함
-  const q = (searchQuery[currentTab] || '').trim().toLowerCase();
-  if(q){
-    filtered = filtered.filter(r => (r.project_name || '').toLowerCase().includes(q));
+function renderRowHtml(r, idx, readOnly){
+  if(readOnly){
+    return `
+      <tr>
+        <td class="col-seq">${idx+1}</td>
+        <td><span class="plain-text">${escapeAttr(r.project_name) || '-'}</span></td>
+        <td class="col-date"><span class="plain-text sub">${formatDate(r.requested_date)}</span></td>
+        <td class="col-due"><span class="plain-text sub">${formatDate(r.due_date)}</span></td>
+        <td class="col-action"><button class="done-btn solid" disabled>실행완료</button></td>
+      </tr>`;
   }
-
-  // "진행중" 탭만 마감일자 임박순으로 정렬. "완료" 탭은 기존 작성순 그대로 유지.
-  if(currentTab === 'active'){
-    filtered = sortByDueDate(filtered);
-  }
-
-  // 골라낸 항목이 하나도 없으면 안내 문구만 표시하고 함수를 끝냄
-  if(filtered.length === 0){
-    const emptyMsg = q
-      ? '검색 결과가 없습니다.'
-      : (currentTab==='active' ? '진행중인 항목이 없습니다. 아래 + 추가 버튼을 눌러보세요.' : '완료된 항목이 없습니다.');
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">${emptyMsg}</td></tr>`;
-    return;
-  }
-
-  if(currentTab === 'active'){
-    // "진행중" 탭 - 순번은 idx+1(화면에 보이는 순서대로 1,2,3...)로 매번 새로 계산해서 매김
-    // (마감일자 순으로 정렬된 뒤의 순서 기준이라, 마감일이 급한 항목일수록 순번이 앞쪽에 옵니다)
-    tbody.innerHTML = filtered.map((r, idx) => `
+  return `
       <tr>
         <td class="col-seq">${idx+1}</td>
         <td>
@@ -876,7 +884,7 @@ function render(){
             onchange="updateField('${r.id}','requested_date', this.value)">
         </td>
         <td class="col-due">
-          <!-- 마감일자 입력칸. 이 값이 바로 위 "진행중" 탭의 정렬 기준(임박한 순)으로 쓰입니다.
+          <!-- 마감일자 입력칸. 이 값이 "진행중" 정렬 기준(임박한 순)으로 쓰입니다.
                비워두면(마감일자 없음) 정렬 시 맨 아래로 밀려납니다. -->
           <input class="cell-input date-input" type="date" value="${r.due_date || ''}"
             data-id="${r.id}" data-field="due_date"
@@ -884,21 +892,57 @@ function render(){
         </td>
         <td class="col-action">
           <!-- 이 버튼을 누르면 completeRecord() 함수가 실행되어 이 항목이 "완료" 상태로 바뀜 -->
-          <button class="done-btn" onclick="completeRecord('${r.id}')">수정완료</button>
+          <button class="done-btn" onclick="completeRecord('${r.id}')">대기중</button>
         </td>
-      </tr>
-    `).join(''); // 배열의 각 항목마다 만들어진 <tr>...</tr> 글자들을 하나로 이어붙여서 표 전체를 완성함
+      </tr>`;
+}
+
+// ----------------------------------------------------------------------------
+// ▣ 표 내용을 실제로 화면에 그리는(다시 채워 넣는) 함수
+// - currentTab에 따라 보여줄 항목을 골라냄: all=전체 다, active=진행중만, done=완료만
+// - 검색창에 글자가 입력되어 있으면, 프로젝트명/수정사항에 그 글자가 포함된 항목만 한 번 더 걸러냄
+// - 정렬: "진행중"만 있는 목록(active 탭, 그리고 all 탭의 진행중 부분)은 마감일자 임박순,
+//   "완료"만 있는 목록(done 탭, 그리고 all 탭의 완료 부분)은 기존 작성순 그대로 둠
+// - "전체" 탭은 진행중 항목을 먼저(마감일순) 보여주고, 그 아래에 완료 항목을 이어서 보여줌
+// ----------------------------------------------------------------------------
+function render(){
+  const tbody = document.getElementById('tbody');
+  // currentTab에 맞게 기본 필터링 (all은 전부, active/done은 상태로 골라냄)
+  let filtered = records;
+  if(currentTab === 'active') filtered = records.filter(r => r.status === '진행중');
+  else if(currentTab === 'done') filtered = records.filter(r => r.status === '완료');
+
+  // 검색어가 있으면(공백만 입력한 경우는 무시) 프로젝트명/수정사항에 그 글자가 포함된 것만 남김
+  // toLowerCase()를 양쪽 다 적용해서 대소문자를 구분하지 않고 검색되도록 함
+  const q = (searchQuery[currentTab] || '').trim().toLowerCase();
+  if(q){
+    filtered = filtered.filter(r => (r.project_name || '').toLowerCase().includes(q));
+  }
+
+  // 골라낸 항목이 하나도 없으면 안내 문구만 표시하고 함수를 끝냄
+  if(filtered.length === 0){
+    let emptyMsg;
+    if(q) emptyMsg = '검색 결과가 없습니다.';
+    else if(currentTab === 'active') emptyMsg = '대기중인 항목이 없습니다. 아래 + 추가 버튼을 눌러보세요.';
+    else if(currentTab === 'done') emptyMsg = '완료된 항목이 없습니다.';
+    else emptyMsg = '등록된 항목이 없습니다. 아래 + 추가 버튼을 눌러보세요.';
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">${emptyMsg}</td></tr>`;
+    return;
+  }
+
+  if(currentTab === 'active'){
+    // "진행중" 탭 - 마감일자 임박순 정렬, 전부 편집 가능한 줄로 표시
+    const sorted = sortByDueDate(filtered);
+    tbody.innerHTML = sorted.map((r, idx) => renderRowHtml(r, idx, false)).join('');
+  } else if(currentTab === 'done'){
+    // "완료" 탭 - 작성순 그대로, 전부 읽기전용 줄로 표시
+    tbody.innerHTML = filtered.map((r, idx) => renderRowHtml(r, idx, true)).join('');
   } else {
-    // "완료" 탭 - 더 이상 수정할 수 없으므로 입력칸(<input>) 대신 읽기 전용 글자(<span>)로 표시
-    tbody.innerHTML = filtered.map((r, idx) => `
-      <tr>
-        <td class="col-seq">${idx+1}</td>
-        <td><span class="plain-text">${escapeAttr(r.project_name) || '-'}</span></td>
-        <td class="col-date"><span class="plain-text sub">${formatDate(r.requested_date)}</span></td>
-        <td class="col-due"><span class="plain-text sub">${formatDate(r.due_date)}</span></td>
-        <td class="col-action"><span class="status-badge">완료</span></td>
-      </tr>
-    `).join('');
+    // "전체" 탭 - 진행중 항목을 마감일순으로 먼저 보여주고, 그 아래에 완료 항목을 작성순으로 이어붙임
+    const pending = sortByDueDate(filtered.filter(r => r.status === '진행중'));
+    const done = filtered.filter(r => r.status === '완료');
+    const combined = [...pending, ...done];
+    tbody.innerHTML = combined.map((r, idx) => renderRowHtml(r, idx, r.status === '완료')).join('');
   }
 }
 
