@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기술전략팀 업무관리</title>
+<style>
+  /* =============================================
+     전체 기본 설정
+     글꼴, 색상, 여백 등 앱 전반에 적용되는 기본값
+  ============================================= */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    background: #F5F6FA;
+    color: #222;
+    font-size: 14px;
+    /* 모바일에서 단어가 이상하게 잘리지 않도록 */
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  /* =============================================
+     헤더 영역
+     상단 타이틀 + 탭 버튼 + 새로고침 버튼
+  ============================================= */
+  .header {
+    background: #fff;
+    border-bottom: 1px solid #E8E8EE;
+    padding: 0 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0 10px;
+    gap: 12px;
+  }
+
+  /* 헤더 타이틀 텍스트 */
+  .header-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1A1A2E;
+    white-space: nowrap;
+    letter-spacing: -0.3px;
+  }
+
+  .header-title span {
+    color: #7C5CBF;
+  }
+
+  /* 오른쪽 상단 버튼 그룹 */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* =============================================
+     새로고침 버튼 - 분홍 pill 스타일 (표준)
+  ============================================= */
+  .btn-refresh {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 16px;
+    border: 1px solid #F3C1D3;
+    border-radius: 7px;
+    background: #FFF3F7;
+    color: #D6336C;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-refresh:hover { background: #FFE4EF; }
+
+  /* 새로고침 아이콘 회전 애니메이션 */
+  .btn-refresh svg { transition: transform 0.6s ease; }
+  .btn-refresh.spinning svg { transform: rotate(360deg); }
+
+  /* =============================================
+     탭 전환 버튼 (업무일정표 / 경비사용내역)
+  ============================================= */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #999;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn.active {
+    color: #7C5CBF;
+    border-bottom-color: #7C5CBF;
+  }
+  .tab-btn:hover:not(.active) { color: #555; }
+
+  /* =============================================
+     메인 콘텐츠 영역
+  ============================================= */
+  .main {
+    padding: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* 탭 패널 - active 아닌 건 숨김 */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* =============================================
+     요약 카드 영역 (상태별 카운트 등)
+  ============================================= */
+  .summary-cards {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .summary-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 20px;
+    border: 1px solid #EBEBF0;
+    min-width: 120px;
+    flex: 1;
+  }
+
+  .summary-card .label {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .summary-card .value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1A1A2E;
+  }
+
+  .summary-card.done .value { color: #2E86AB; }
+  .summary-card.ing .value { color: #7C5CBF; }
+  .summary-card.hold .value { color: #F0A500; }
+  .summary-card.cont .value { color: #3DAA75; }
+
+  /* =============================================
+     필터/검색 툴바
+  ============================================= */
+  .toolbar {
+    background: #fff;
+    border: 1px solid #EBEBF0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  /* 검색 입력창 */
+  .search-input {
+    flex: 1;
+    min-width: 160px;
+    padding: 8px 12px;
+    border: 1px solid #DDD;
+    border-radius: 7px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: #7C5CBF; }
+
+  /* 필터 셀렉트 박스 */
+  .filter-select {
+    padding: 8px 12px;
+    border: 1px solid #DDD;
+    border-radius: 7px;
+    font-size: 13px;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+    color: #444;
+  }
+  .filter-select:focus { border-color: #7C5CBF; }
+
+  /* 추가 버튼 */
+  .btn-add {
+    padding: 8px 16px;
+    background: #7C5CBF;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-add:hover { background: #6A4DAD; }
+
+  /* =============================================
+     테이블 공통 스타일
+  ============================================= */
+  .table-wrap {
+    background: #fff;
+    border: 1px solid #EBEBF0;
+    border-radius: 10px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+  }
+
+  thead th {
+    background: #F7F5FF;
+    padding: 11px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #7C5CBF;
+    text-align: left;
+    border-bottom: 1px solid #E8E4F8;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #F0F0F5;
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: #FAFAFF; }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #333;
+    vertical-align: middle;
+  }
+
+  /* =============================================
+     상태 뱃지 (완료/진행중/보류/지속적진행)
+  ============================================= */
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge-done    { background: #E3F4FB; color: #2E86AB; }
+  .badge-ing     { background: #F0EBFF; color: #7C5CBF; }
+  .badge-hold    { background: #FFF5E0; color: #D48806; }
+  .badge-cont    { background: #E6F7EF; color: #2E7D52; }
+  .badge-request { background: #FFF0F0; color: #D63031; }
+
+  /* =============================================
+     업무강도 뱃지
+  ============================================= */
+  .intensity-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .intensity-최상 { background: #FFE0E0; color: #C0392B; }
+  .intensity-상   { background: #FFE8CC; color: #D35400; }
+  .intensity-중   { background: #FFF5CC; color: #B7770D; }
+  .intensity-하   { background: #E8F5E9; color: #2E7D32; }
+  .intensity-최하 { background: #F0F0F0; color: #666; }
+
+  /* =============================================
+     진행상태 셀 (모델링/제작도/매뉴얼)
+  ============================================= */
+  .progress-cell {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .progress-완료    { background: #E3F4FB; color: #2E86AB; }
+  .progress-진행중  { background: #F0EBFF; color: #7C5CBF; }
+  .progress-미적용  { background: #F5F5F5; color: #999; }
+
+  /* =============================================
+     액션 버튼 (수정/삭제)
+  ============================================= */
+  .btn-action {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    transition: opacity 0.15s;
+  }
+  .btn-action:hover { opacity: 0.75; }
+  .btn-edit   { background: #F0EBFF; color: #7C5CBF; border-color: #D4C5F5; }
+  .btn-delete { background: #FFF0F0; color: #D63031; border-color: #FFCDD2; }
+
+  /* =============================================
+     빈 데이터 안내 메시지
+  ============================================= */
+  .empty-msg {
+    text-align: center;
+    padding: 48px 20px;
+    color: #BBB;
+    font-size: 14px;
+  }
+
+  /* =============================================
+     모달 (팝업) - 추가/수정 폼
+     배경 클릭해도 닫히지 않음 (X버튼만)
+  ============================================= */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px;
+    width: 90%;
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1A1A2E;
+    margin-bottom: 20px;
+  }
+
+  /* X 닫기 버튼 */
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .modal-close:hover { color: #333; }
+
+  /* 폼 그리드 레이아웃 */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+  }
+
+  /* 폼 입력창 공통 */
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #DDD;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #333;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color: #7C5CBF; }
+
+  .form-group textarea { resize: vertical; min-height: 70px; }
+
+  /* 모달 하단 버튼 영역 */
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  /* 저장/취소 버튼 */
+  .btn-save {
+    padding: 9px 22px;
+    background: #7C5CBF;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: #6A4DAD; }
+
+  .btn-cancel {
+    padding: 9px 22px;
+    background: #F5F5F5;
+    color: #555;
+    border: 1px solid #DDD;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-cancel:hover { background: #EBEBEB; }
+
+  /* =============================================
+     경비사용내역 전용 스타일
+  ============================================= */
+  /* 예산 현황 바 */
+  .budget-summary {
+    background: #fff;
+    border: 1px solid #EBEBF0;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .budget-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .budget-info {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .budget-item .label {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 2px;
+  }
+  .budget-item .val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1A1A2E;
+  }
+  .budget-item .val.spent { color: #D63031; }
+  .budget-item .val.remain { color: #2E7D52; }
+
+  /* 예산 사용 프로그레스 바 */
+  .progress-bar-wrap {
+    background: #F0F0F5;
+    border-radius: 20px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7C5CBF, #D6336C);
+    border-radius: 20px;
+    transition: width 0.5s ease;
+  }
+
+  /* =============================================
+     로딩 스피너
+  ============================================= */
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+    font-size: 14px;
+  }
+
+  /* =============================================
+     토스트 알림 메시지
+  ============================================= */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1A1A2E;
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 9999;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* =============================================
+     초기 데이터 업로드 버튼
+  ============================================= */
+  .btn-import {
+    padding: 8px 16px;
+    background: #E6F7EF;
+    color: #2E7D52;
+    border: 1px solid #A8DFC0;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-import:hover { background: #C8EDD9; }
+
+  /* =============================================
+     모바일 반응형 (480px 이하)
+  ============================================= */
+  @media (max-width: 480px) {
+    .header-title { font-size: 14px; }
+    .main { padding: 12px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .summary-card { min-width: 80px; padding: 10px 12px; }
+    .summary-card .value { font-size: 18px; }
+    .header-actions { gap: 5px; }
+    .tab-btn { padding: 10px 12px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- =============================================
+     헤더: 타이틀 + 탭 + 새로고침
+============================================= -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-title">🏢 기술전략팀 <span>업무관리</span></div>
+    <div class="header-actions">
+      <!-- 엑셀 데이터 초기 업로드 버튼 (처음 한 번만 사용) -->
+      <button class="btn-import" onclick="importInitialData()">📥 초기데이터 업로드</button>
+      <!-- 새로고침 버튼: 분홍 pill 스타일 -->
+      <button class="btn-refresh" id="refreshBtn" onclick="refreshAll()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        새로고침
+      </button>
+    </div>
+  </div>
+  <!-- 탭 전환 버튼 -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('task')" id="tab-task">📋 업무일정표</button>
+    <button class="tab-btn" onclick="switchTab('expense')" id="tab-expense">💰 경비사용내역</button>
+  </div>
+</div>
+
+<!-- =============================================
+     메인 콘텐츠
+============================================= -->
+<div class="main">
+
+  <!-- ==================== 탭 1: 업무일정표 ==================== -->
+  <div class="tab-panel active" id="panel-task">
+
+    <!-- 상태별 요약 카드 -->
+    <div class="summary-cards">
+      <div class="summary-card done">
+        <div class="label">✅ 완료</div>
+        <div class="value" id="cnt-done">-</div>
+      </div>
+      <div class="summary-card ing">
+        <div class="label">🔄 진행중</div>
+        <div class="value" id="cnt-ing">-</div>
+      </div>
+      <div class="summary-card hold">
+        <div class="label">⏸ 보류</div>
+        <div class="value" id="cnt-hold">-</div>
+      </div>
+      <div class="summary-card cont">
+        <div class="label">♻️ 지속진행</div>
+        <div class="value" id="cnt-cont">-</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">📌 요청</div>
+        <div class="value" id="cnt-req">-</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">📊 전체</div>
+        <div class="value" id="cnt-all">-</div>
+      </div>
+    </div>
+
+    <!-- 필터 툴바 -->
+    <div class="toolbar">
+      <input type="text" class="search-input" id="taskSearch" placeholder="🔍 업무내용, 담당자, 프로젝트명 검색..." oninput="renderTaskTable()">
+      <select class="filter-select" id="filterStatus" onchange="renderTaskTable()">
+        <option value="">전체 상태</option>
+        <option value="완료">✅ 완료</option>
+        <option value="진행중">🔄 진행중</option>
+        <option value="보류">⏸ 보류</option>
+        <option value="지속적진행">♻️ 지속진행</option>
+        <option value="요청">📌 요청</option>
+      </select>
+      <select class="filter-select" id="filterLead" onchange="renderTaskTable()">
+        <option value="">전체 담당자</option>
+        <option value="주종현">주종현</option>
+        <option value="정재철">정재철</option>
+        <option value="김태훈">김태훈</option>
+        <option value="이미녕">이미녕</option>
+      </select>
+      <select class="filter-select" id="filterCategory" onchange="renderTaskTable()">
+        <option value="">전체 분류</option>
+        <option value="국내영업">국내영업</option>
+        <option value="국내">국내</option>
+        <option value="해외">해외</option>
+        <option value="어드벤처">어드벤처</option>
+        <option value="신제품개발">신제품개발</option>
+        <option value="DB">DB</option>
+        <option value="기성품">기성품</option>
+        <option value="개발">개발</option>
+        <option value="HPL">HPL</option>
+        <option value="3D프린터">3D프린터</option>
+      </select>
+      <button class="btn-add" onclick="openTaskModal()">+ 업무 추가</button>
+    </div>
+
+    <!-- 업무일정표 테이블 -->
+    <div class="table-wrap">
+      <div id="taskTableWrap">
+        <div class="loading">⏳ 데이터를 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 탭 2: 부서경비사용내역 ==================== -->
+  <div class="tab-panel" id="panel-expense">
+
+    <!-- 예산 현황 요약 -->
+    <div class="budget-summary" id="budgetSummary">
+      <div class="budget-row">
+        <div class="budget-info">
+          <div class="budget-item">
+            <div class="label">총 배정금액</div>
+            <div class="val" id="budgetTotal">-</div>
+          </div>
+          <div class="budget-item">
+            <div class="label">집행금액</div>
+            <div class="val spent" id="budgetSpent">-</div>
+          </div>
+          <div class="budget-item">
+            <div class="label">미집행(잔액)</div>
+            <div class="val remain" id="budgetRemain">-</div>
+          </div>
+          <div class="budget-item">
+            <div class="label">집행률</div>
+            <div class="val" id="budgetRate">-</div>
+          </div>
+        </div>
+      </div>
+      <!-- 프로그레스 바 -->
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="budgetBar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- 경비 툴바 -->
+    <div class="toolbar">
+      <input type="text" class="search-input" id="expenseSearch" placeholder="🔍 항목, 비고 검색..." oninput="renderExpenseTable()">
+      <button class="btn-add" onclick="openExpenseModal()">+ 경비 추가</button>
+    </div>
+
+    <!-- 경비사용내역 테이블 -->
+    <div class="table-wrap">
+      <div id="expenseTableWrap">
+        <div class="loading">⏳ 데이터를 불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- =============================================
+     업무 추가/수정 모달
+     배경 클릭해도 닫히지 않음
+============================================= -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeTaskModal()">✕</button>
+    <div class="modal-title" id="taskModalTitle">업무 추가</div>
+    <div class="form-grid">
+      <!-- 상태 -->
+      <div class="form-group">
+        <label>업무 상태 *</label>
+        <select id="f-status">
+          <option value="1. 요청">📌 요청</option>
+          <option value="2 진행중">🔄 진행중</option>
+          <option value="3. 지속적진행">♻️ 지속적진행</option>
+          <option value="4. 보류">⏸ 보류</option>
+          <option value="5. 완료">✅ 완료</option>
+        </select>
+      </div>
+      <!-- 업무강도 -->
+      <div class="form-group">
+        <label>업무강도</label>
+        <select id="f-intensity">
+          <option value="최상">최상</option>
+          <option value="상">상</option>
+          <option value="중" selected>중</option>
+          <option value="하">하</option>
+          <option value="최하">최하</option>
+        </select>
+      </div>
+      <!-- 주담당자 -->
+      <div class="form-group">
+        <label>주담당자</label>
+        <select id="f-lead">
+          <option value="">선택</option>
+          <option value="주종현">주종현</option>
+          <option value="정재철">정재철</option>
+          <option value="김태훈">김태훈</option>
+          <option value="이미녕">이미녕</option>
+        </select>
+      </div>
+      <!-- 보조담당자 -->
+      <div class="form-group">
+        <label>보조담당자</label>
+        <input type="text" id="f-sub" placeholder="이름 입력">
+      </div>
+      <!-- 업무내용 (전체 너비) -->
+      <div class="form-group full">
+        <label>프로젝트명 / 업무내용 *</label>
+        <input type="text" id="f-title" placeholder="업무내용을 입력하세요">
+      </div>
+      <!-- 출고지 -->
+      <div class="form-group">
+        <label>출고지</label>
+        <input type="text" id="f-location" placeholder="예: 김제, 태국, 싱가폴">
+      </div>
+      <!-- 영업담당 -->
+      <div class="form-group">
+        <label>영업담당</label>
+        <input type="text" id="f-sales" placeholder="이름 입력">
+      </div>
+      <!-- 시작일 -->
+      <div class="form-group">
+        <label>시작일</label>
+        <input type="date" id="f-start">
+      </div>
+      <!-- 종료일 -->
+      <div class="form-group">
+        <label>종료일</label>
+        <input type="date" id="f-end">
+      </div>
+      <!-- 요청일 -->
+      <div class="form-group">
+        <label>요청일</label>
+        <input type="date" id="f-request">
+      </div>
+      <!-- 요청마감 -->
+      <div class="form-group">
+        <label>요청 마감</label>
+        <input type="date" id="f-deadline">
+      </div>
+      <!-- 업무분류 -->
+      <div class="form-group">
+        <label>업무분류</label>
+        <select id="f-category">
+          <option value="">선택</option>
+          <option value="국내영업">국내영업</option>
+          <option value="국내">국내</option>
+          <option value="해외영업">해외영업</option>
+          <option value="어드벤처">어드벤처</option>
+          <option value="신제품개발">신제품개발</option>
+          <option value="DB">DB</option>
+          <option value="기성품">기성품</option>
+          <option value="개발">개발</option>
+          <option value="HPL">HPL</option>
+          <option value="3D프린터">3D프린터</option>
+          <option value="교량 개발품">교량 개발품</option>
+        </select>
+      </div>
+      <!-- 업무성격 -->
+      <div class="form-group">
+        <label>업무성격</label>
+        <input type="text" id="f-nature" placeholder="예: 놀이시설 DB, 어드벤처개발">
+      </div>
+      <!-- 모델링 -->
+      <div class="form-group">
+        <label>모델링 (3D)</label>
+        <select id="f-modeling">
+          <option value="">-</option>
+          <option value="진행중">진행중</option>
+          <option value="완료">완료</option>
+          <option value="미적용">미적용</option>
+        </select>
+      </div>
+      <!-- 제작도 -->
+      <div class="form-group">
+        <label>제작도 (2D)</label>
+        <select id="f-drawing">
+          <option value="">-</option>
+          <option value="진행중">진행중</option>
+          <option value="완료">완료</option>
+          <option value="미적용">미적용</option>
+        </select>
+      </div>
+      <!-- 매뉴얼 -->
+      <div class="form-group full">
+        <label>매뉴얼 체크리스트</label>
+        <select id="f-manual">
+          <option value="">-</option>
+          <option value="진행중">진행중</option>
+          <option value="완료">완료</option>
+          <option value="미적용">미적용</option>
+        </select>
+      </div>
+      <!-- 업무내용 메모 -->
+      <div class="form-group full">
+        <label>업무내용 상세</label>
+        <textarea id="f-memo" placeholder="상세 업무내용을 입력하세요"></textarea>
+      </div>
+      <!-- 업무가이드 -->
+      <div class="form-group full">
+        <label>업무가이드</label>
+        <textarea id="f-guide" placeholder="업무 가이드를 입력하세요"></textarea>
+      </div>
+      <!-- 디자인 경로 -->
+      <div class="form-group full">
+        <label>디자인 경로</label>
+        <input type="text" id="f-design-path" placeholder="파일 경로 입력">
+      </div>
+      <!-- 제작도 경로 -->
+      <div class="form-group full">
+        <label>제작도 경로</label>
+        <input type="text" id="f-drawing-path" placeholder="파일 경로 입력">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeTaskModal()">취소</button>
+      <button class="btn-save" onclick="saveTask()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     경비 추가/수정 모달
+============================================= -->
+<div class="modal-overlay" id="expenseModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeExpenseModal()">✕</button>
+    <div class="modal-title" id="expenseModalTitle">경비 추가</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>사용일자</label>
+        <input type="date" id="ef-date">
+      </div>
+      <div class="form-group">
+        <label>경비항목</label>
+        <select id="ef-type">
+          <option value="식사">식사</option>
+          <option value="커피">커피</option>
+          <option value="교통">교통</option>
+          <option value="물품구입">물품구입</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>참석인원</label>
+        <input type="number" id="ef-attendees" placeholder="명" min="1">
+      </div>
+      <div class="form-group">
+        <label>금차 집행액 (원)</label>
+        <input type="number" id="ef-amount" placeholder="금액 입력" min="0">
+      </div>
+      <div class="form-group full">
+        <label>비고 (사용목적)</label>
+        <input type="text" id="ef-note" placeholder="예: 팀 회식">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeExpenseModal()">취소</button>
+      <button class="btn-save" onclick="saveExpense()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 알림 -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* =============================================
+   Supabase 연결 설정
+   URL과 anon 키를 여기서 관리합니다
+============================================= */
+const SUPABASE_URL = 'https://zrhwdvuehaelintkfoqn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_oQ7F4Q9KRS22lpiE9uILFA_zN7n2V4V';
+
+// Supabase REST API 헤더 (모든 요청에 공통으로 사용)
+const HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Prefer': 'return=representation'
+};
+
+/* =============================================
+   앱 상태 변수
+   전역으로 불러온 데이터를 저장해 둡니다
+============================================= */
+let taskData = [];     // 업무일정표 전체 데이터
+let expenseData = [];  // 경비사용내역 전체 데이터
+let editingTaskId = null;     // 현재 수정 중인 업무 ID
+let editingExpenseId = null;  // 현재 수정 중인 경비 ID
+
+/* =============================================
+   앱 시작: 데이터 로드
+============================================= */
+async function init() {
+  await Promise.all([loadTasks(), loadExpenses()]);
+}
+
+/* =============================================
+   탭 전환
+   tab: 'task' 또는 'expense'
+============================================= */
+function switchTab(tab) {
+  // 모든 탭 버튼과 패널 비활성화
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  // 선택한 탭 활성화
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+/* =============================================
+   새로고침 버튼 동작
+   아이콘 회전 + 데이터 다시 불러오기
+============================================= */
+async function refreshAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  await Promise.all([loadTasks(), loadExpenses()]);
+  // 0.6초 후 회전 클래스 제거 (애니메이션 끝나고)
+  setTimeout(() => btn.classList.remove('spinning'), 600);
+}
+
+/* =============================================
+   토스트 알림 표시
+   msg: 표시할 메시지
+   duration: 표시 시간(ms), 기본 2000
+============================================= */
+function showToast(msg, duration = 2000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+/* =============================================
+   날짜 포맷 변환
+   엑셀 serial 숫자 → YYYY-MM-DD 문자열
+============================================= */
+function excelSerialToDate(serial) {
+  if (!serial || serial < 0) return null;
+  // 엑셀 날짜는 1900-01-01 기준 serial number
+  const utc_days = Math.floor(serial - 25569);
+  const utc_value = utc_days * 86400;
+  const date_info = new Date(utc_value * 1000);
+  const y = date_info.getFullYear();
+  const m = String(date_info.getMonth() + 1).padStart(2, '0');
+  const d = String(date_info.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/* =============================================
+   날짜 표시용 포맷 (YYYY-MM-DD → MM/DD)
+============================================= */
+function fmtDate(dateStr) {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return dateStr;
+  return `${parts[1]}/${parts[2]}`;
+}
+
+/* =============================================
+   금액 포맷 (숫자 → 천단위 콤마)
+============================================= */
+function fmtMoney(n) {
+  if (!n && n !== 0) return '-';
+  return Number(n).toLocaleString('ko-KR') + '원';
+}
+
+/* =============================================
+   상태 뱃지 HTML 생성
+============================================= */
+function statusBadge(status) {
+  if (!status) return '';
+  // status 값에서 핵심 키워드 추출
+  const s = status.toLowerCase();
+  if (s.includes('완료')) return `<span class="badge badge-done">완료</span>`;
+  if (s.includes('진행중')) return `<span class="badge badge-ing">진행중</span>`;
+  if (s.includes('보류')) return `<span class="badge badge-hold">보류</span>`;
+  if (s.includes('지속')) return `<span class="badge badge-cont">지속진행</span>`;
+  if (s.includes('요청')) return `<span class="badge badge-request">요청</span>`;
+  return `<span class="badge">${status}</span>`;
+}
+
+/* =============================================
+   진행상태 뱃지 (모델링/제작도/매뉴얼)
+============================================= */
+function progressBadge(val) {
+  if (!val) return '<span style="color:#CCC">-</span>';
+  return `<span class="progress-cell progress-${val}">${val}</span>`;
+}
+
+/* =============================================
+   업무강도 뱃지
+============================================= */
+function intensityBadge(val) {
+  if (!val) return '-';
+  return `<span class="intensity-badge intensity-${val}">${val}</span>`;
+}
+
+/* =============================================
+   업무일정표 데이터 로드
+   Supabase에서 전체 데이터 가져오기
+============================================= */
+async function loadTasks() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/task_schedule?order=created_at.asc`,
+      { headers: HEADERS }
+    );
+    taskData = await res.json();
+    renderTaskTable();
+    updateTaskSummary();
+  } catch (e) {
+    console.error('업무 데이터 로드 실패:', e);
+    document.getElementById('taskTableWrap').innerHTML =
+      '<div class="empty-msg">❌ 데이터 로드에 실패했습니다.</div>';
+  }
+}
+
+/* =============================================
+   업무일정표 요약 카드 업데이트
+============================================= */
+function updateTaskSummary() {
+  const counts = { done: 0, ing: 0, hold: 0, cont: 0, req: 0 };
+  taskData.forEach(t => {
+    const s = (t.status || '').toLowerCase();
+    if (s.includes('완료')) counts.done++;
+    else if (s.includes('진행중')) counts.ing++;
+    else if (s.includes('보류')) counts.hold++;
+    else if (s.includes('지속')) counts.cont++;
+    else if (s.includes('요청')) counts.req++;
+  });
+  document.getElementById('cnt-done').textContent = counts.done;
+  document.getElementById('cnt-ing').textContent = counts.ing;
+  document.getElementById('cnt-hold').textContent = counts.hold;
+  document.getElementById('cnt-cont').textContent = counts.cont;
+  document.getElementById('cnt-req').textContent = counts.req;
+  document.getElementById('cnt-all').textContent = taskData.length;
+}
+
+/* =============================================
+   업무일정표 테이블 렌더링
+   필터/검색 조건 적용 후 HTML 생성
+============================================= */
+function renderTaskTable() {
+  const search = (document.getElementById('taskSearch').value || '').toLowerCase();
+  const statusFilter = document.getElementById('filterStatus').value;
+  const leadFilter = document.getElementById('filterLead').value;
+  const catFilter = document.getElementById('filterCategory').value;
+
+  // 필터 조건 적용
+  const filtered = taskData.filter(t => {
+    // 검색어 필터 (업무내용, 담당자, 제목)
+    const matchSearch = !search || (
+      (t.title || '').toLowerCase().includes(search) ||
+      (t.lead || '').toLowerCase().includes(search) ||
+      (t.sub || '').toLowerCase().includes(search) ||
+      (t.location || '').toLowerCase().includes(search)
+    );
+    // 상태 필터
+    const matchStatus = !statusFilter ||
+      (t.status || '').includes(statusFilter);
+    // 담당자 필터
+    const matchLead = !leadFilter || t.lead === leadFilter;
+    // 분류 필터
+    const matchCat = !catFilter || t.category === catFilter;
+
+    return matchSearch && matchStatus && matchLead && matchCat;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById('taskTableWrap').innerHTML =
+      '<div class="empty-msg">📭 조건에 맞는 업무가 없습니다.</div>';
+    return;
+  }
+
+  // 테이블 HTML 생성
+  let html = `
+  <table>
+    <thead>
+      <tr>
+        <th>상태</th>
+        <th>주담당자</th>
+        <th>보조</th>
+        <th style="min-width:240px">프로젝트명 / 업무내용</th>
+        <th>출고지</th>
+        <th>시작</th>
+        <th>마감</th>
+        <th>D-day</th>
+        <th>영업담당</th>
+        <th>분류</th>
+        <th>모델링</th>
+        <th>제작도</th>
+        <th>매뉴얼</th>
+        <th>강도</th>
+        <th style="min-width:80px">관리</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  filtered.forEach(t => {
+    // D-day 색상 처리
+    let ddayTxt = '-';
+    let ddayStyle = '';
+    if (t.dday !== null && t.dday !== undefined && t.dday !== -33015) {
+      ddayTxt = t.dday >= 0 ? `D+${t.dday}` : `D${t.dday}`;
+      ddayStyle = t.dday > 7 ? 'color:#D63031;font-weight:700' :
+                  t.dday > 0 ? 'color:#D48806;font-weight:700' : '';
+    }
+
+    html += `
+    <tr>
+      <td>${statusBadge(t.status)}</td>
+      <td><strong>${t.lead || '-'}</strong></td>
+      <td style="color:#888">${t.sub || '-'}</td>
+      <td title="${t.title || ''}">${t.title || '-'}</td>
+      <td>${t.location || '-'}</td>
+      <td>${fmtDate(t.start_date)}</td>
+      <td>${fmtDate(t.deadline)}</td>
+      <td style="${ddayStyle}">${ddayTxt}</td>
+      <td>${t.sales || '-'}</td>
+      <td>${t.category || '-'}</td>
+      <td>${progressBadge(t.modeling)}</td>
+      <td>${progressBadge(t.drawing)}</td>
+      <td>${progressBadge(t.manual)}</td>
+      <td>${intensityBadge(t.intensity)}</td>
+      <td>
+        <button class="btn-action btn-edit" onclick="editTask('${t.id}')">수정</button>
+        <button class="btn-action btn-delete" onclick="deleteTask('${t.id}')">삭제</button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById('taskTableWrap').innerHTML = html;
+}
+
+/* =============================================
+   업무 추가 모달 열기
+============================================= */
+function openTaskModal() {
+  editingTaskId = null;
+  document.getElementById('taskModalTitle').textContent = '업무 추가';
+  // 폼 초기화
+  clearTaskForm();
+  document.getElementById('taskModal').classList.add('open');
+}
+
+/* =============================================
+   업무 수정 모달 열기
+   id: 수정할 업무의 UUID
+============================================= */
+function editTask(id) {
+  const t = taskData.find(x => x.id === id);
+  if (!t) return;
+  editingTaskId = id;
+  document.getElementById('taskModalTitle').textContent = '업무 수정';
+
+  // 폼에 기존 데이터 채우기
+  document.getElementById('f-status').value     = t.status || '';
+  document.getElementById('f-intensity').value  = t.intensity || '중';
+  document.getElementById('f-lead').value        = t.lead || '';
+  document.getElementById('f-sub').value         = t.sub || '';
+  document.getElementById('f-title').value       = t.title || '';
+  document.getElementById('f-location').value    = t.location || '';
+  document.getElementById('f-sales').value       = t.sales || '';
+  document.getElementById('f-start').value       = t.start_date || '';
+  document.getElementById('f-end').value         = t.end_date || '';
+  document.getElementById('f-request').value     = t.request_date || '';
+  document.getElementById('f-deadline').value    = t.deadline || '';
+  document.getElementById('f-category').value    = t.category || '';
+  document.getElementById('f-nature').value      = t.nature || '';
+  document.getElementById('f-modeling').value    = t.modeling || '';
+  document.getElementById('f-drawing').value     = t.drawing || '';
+  document.getElementById('f-manual').value      = t.manual || '';
+  document.getElementById('f-memo').value        = t.memo || '';
+  document.getElementById('f-guide').value       = t.guide || '';
+  document.getElementById('f-design-path').value = t.design_path || '';
+  document.getElementById('f-drawing-path').value = t.drawing_path || '';
+
+  document.getElementById('taskModal').classList.add('open');
+}
+
+/* =============================================
+   업무 저장 (추가 또는 수정)
+============================================= */
+async function saveTask() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) { showToast('⚠️ 업무내용을 입력해주세요.'); return; }
+
+  // 폼 데이터 수집
+  const payload = {
+    status:       document.getElementById('f-status').value,
+    intensity:    document.getElementById('f-intensity').value,
+    lead:         document.getElementById('f-lead').value,
+    sub:          document.getElementById('f-sub').value,
+    title:        title,
+    location:     document.getElementById('f-location').value,
+    sales:        document.getElementById('f-sales').value,
+    start_date:   document.getElementById('f-start').value || null,
+    end_date:     document.getElementById('f-end').value || null,
+    request_date: document.getElementById('f-request').value || null,
+    deadline:     document.getElementById('f-deadline').value || null,
+    category:     document.getElementById('f-category').value,
+    nature:       document.getElementById('f-nature').value,
+    modeling:     document.getElementById('f-modeling').value,
+    drawing:      document.getElementById('f-drawing').value,
+    manual:       document.getElementById('f-manual').value,
+    memo:         document.getElementById('f-memo').value,
+    guide:        document.getElementById('f-guide').value,
+    design_path:  document.getElementById('f-design-path').value,
+    drawing_path: document.getElementById('f-drawing-path').value,
+  };
+
+  try {
+    let res;
+    if (editingTaskId) {
+      // 수정: PATCH 요청
+      res = await fetch(
+        `${SUPABASE_URL}/rest/v1/task_schedule?id=eq.${editingTaskId}`,
+        { method: 'PATCH', headers: HEADERS, body: JSON.stringify(payload) }
+      );
+    } else {
+      // 추가: POST 요청
+      res = await fetch(
+        `${SUPABASE_URL}/rest/v1/task_schedule`,
+        { method: 'POST', headers: HEADERS, body: JSON.stringify(payload) }
+      );
+    }
+
+    if (!res.ok) throw new Error(await res.text());
+    closeTaskModal();
+    await loadTasks();
+    showToast(editingTaskId ? '✅ 업무가 수정되었습니다.' : '✅ 업무가 추가되었습니다.');
+  } catch (e) {
+    console.error('저장 실패:', e);
+    showToast('❌ 저장에 실패했습니다.');
+  }
+}
+
+/* =============================================
+   업무 삭제
+============================================= */
+async function deleteTask(id) {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/task_schedule?id=eq.${id}`,
+      { method: 'DELETE', headers: HEADERS }
+    );
+    if (!res.ok) throw new Error();
+    await loadTasks();
+    showToast('🗑️ 삭제되었습니다.');
+  } catch (e) {
+    showToast('❌ 삭제에 실패했습니다.');
+  }
+}
+
+/* =============================================
+   업무 모달 닫기 + 폼 초기화
+============================================= */
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.remove('open');
+  clearTaskForm();
+  editingTaskId = null;
+}
+
+function clearTaskForm() {
+  ['f-status','f-intensity','f-lead','f-sub','f-title','f-location',
+   'f-sales','f-start','f-end','f-request','f-deadline','f-category',
+   'f-nature','f-modeling','f-drawing','f-manual','f-memo','f-guide',
+   'f-design-path','f-drawing-path'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = el.tagName === 'SELECT' ?
+      (id === 'f-intensity' ? '중' : '') : '';
+  });
+}
+
+/* =============================================
+   Enter 키로 저장 (업무 폼)
+============================================= */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    if (document.getElementById('taskModal').classList.contains('open')) {
+      // textarea에서는 Enter 줄바꿈 허용
+      if (document.activeElement.tagName !== 'TEXTAREA') saveTask();
+    }
+    if (document.getElementById('expenseModal').classList.contains('open')) {
+      saveExpense();
+    }
+  }
+});
+
+/* =============================================
+   경비사용내역 데이터 로드
+============================================= */
+async function loadExpenses() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/dept_expense?order=seq.asc`,
+      { headers: HEADERS }
+    );
+    expenseData = await res.json();
+    renderExpenseTable();
+    updateBudgetSummary();
+  } catch (e) {
+    console.error('경비 데이터 로드 실패:', e);
+    document.getElementById('expenseTableWrap').innerHTML =
+      '<div class="empty-msg">❌ 데이터 로드에 실패했습니다.</div>';
+  }
+}
+
+/* =============================================
+   예산 현황 업데이트
+   총 배정, 집행, 잔액, 집행률 계산
+============================================= */
+function updateBudgetSummary() {
+  const TOTAL_BUDGET = 1080000; // 연간 총 배정금액 (고정)
+  const spent = expenseData.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const remain = TOTAL_BUDGET - spent;
+  const rate = Math.min(100, Math.round((spent / TOTAL_BUDGET) * 100));
+
+  document.getElementById('budgetTotal').textContent  = fmtMoney(TOTAL_BUDGET);
+  document.getElementById('budgetSpent').textContent  = fmtMoney(spent);
+  document.getElementById('budgetRemain').textContent = fmtMoney(remain);
+  document.getElementById('budgetRate').textContent   = `${rate}%`;
+  document.getElementById('budgetBar').style.width    = `${rate}%`;
+}
+
+/* =============================================
+   경비사용내역 테이블 렌더링
+============================================= */
+function renderExpenseTable() {
+  const search = (document.getElementById('expenseSearch').value || '').toLowerCase();
+
+  const filtered = expenseData.filter(e =>
+    !search || (
+      (e.expense_type || '').toLowerCase().includes(search) ||
+      (e.note || '').toLowerCase().includes(search)
+    )
+  );
+
+  if (filtered.length === 0) {
+    document.getElementById('expenseTableWrap').innerHTML =
+      '<div class="empty-msg">📭 경비 내역이 없습니다.</div>';
+    return;
+  }
+
+  let html = `
+  <table>
+    <thead>
+      <tr>
+        <th>번호</th>
+        <th>사용일자</th>
+        <th>경비항목</th>
+        <th>참석인원</th>
+        <th>경비한도</th>
+        <th>금차 집행액</th>
+        <th>사용 후 잔액</th>
+        <th>비고 (사용목적)</th>
+        <th>관리</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  filtered.forEach((e, idx) => {
+    html += `
+    <tr>
+      <td style="color:#999">${e.seq || idx + 1}</td>
+      <td>${e.used_date ? e.used_date.replace(/-/g, '.') : '-'}</td>
+      <td>
+        <span class="badge ${e.expense_type === '식사' ? 'badge-ing' :
+                             e.expense_type === '커피' ? 'badge-cont' : ''}">
+          ${e.expense_type || '-'}
+        </span>
+      </td>
+      <td>${e.attendees ? e.attendees + '명' : '-'}</td>
+      <td style="color:#888">${fmtMoney(e.budget_limit)}</td>
+      <td style="color:#D63031;font-weight:600">${fmtMoney(e.amount)}</td>
+      <td style="color:#2E7D52;font-weight:600">${fmtMoney(e.balance)}</td>
+      <td>${e.note || '-'}</td>
+      <td>
+        <button class="btn-action btn-edit" onclick="editExpense('${e.id}')">수정</button>
+        <button class="btn-action btn-delete" onclick="deleteExpense('${e.id}')">삭제</button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById('expenseTableWrap').innerHTML = html;
+}
+
+/* =============================================
+   경비 추가 모달 열기
+============================================= */
+function openExpenseModal() {
+  editingExpenseId = null;
+  document.getElementById('expenseModalTitle').textContent = '경비 추가';
+  document.getElementById('ef-date').value = '';
+  document.getElementById('ef-type').value = '식사';
+  document.getElementById('ef-attendees').value = '';
+  document.getElementById('ef-amount').value = '';
+  document.getElementById('ef-note').value = '';
+  document.getElementById('expenseModal').classList.add('open');
+}
+
+/* =============================================
+   경비 수정 모달 열기
+============================================= */
+function editExpense(id) {
+  const e = expenseData.find(x => x.id === id);
+  if (!e) return;
+  editingExpenseId = id;
+  document.getElementById('expenseModalTitle').textContent = '경비 수정';
+  document.getElementById('ef-date').value       = e.used_date || '';
+  document.getElementById('ef-type').value       = e.expense_type || '식사';
+  document.getElementById('ef-attendees').value  = e.attendees || '';
+  document.getElementById('ef-amount').value     = e.amount || '';
+  document.getElementById('ef-note').value       = e.note || '';
+  document.getElementById('expenseModal').classList.add('open');
+}
+
+/* =============================================
+   경비 저장 (추가 또는 수정)
+   잔액은 자동 계산: 이전 잔액 - 집행액
+============================================= */
+async function saveExpense() {
+  const amount = Number(document.getElementById('ef-amount').value);
+  if (!amount) { showToast('⚠️ 집행액을 입력해주세요.'); return; }
+
+  const TOTAL_BUDGET = 1080000;
+
+  // 잔액 자동 계산: 총배정 - 기존집행합 - 이번집행액
+  const prevSpent = expenseData
+    .filter(e => e.id !== editingExpenseId)
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const newBalance = TOTAL_BUDGET - prevSpent - amount;
+
+  // 순번 계산
+  const maxSeq = expenseData.length > 0
+    ? Math.max(...expenseData.map(e => e.seq || 0))
+    : 0;
+
+  const payload = {
+    seq:          editingExpenseId ? undefined : maxSeq + 1,
+    used_date:    document.getElementById('ef-date').value || null,
+    expense_type: document.getElementById('ef-type').value,
+    attendees:    Number(document.getElementById('ef-attendees').value) || null,
+    budget_limit: TOTAL_BUDGET - prevSpent, // 집행 전 잔액
+    amount:       amount,
+    balance:      newBalance,
+    note:         document.getElementById('ef-note').value,
+  };
+  if (editingExpenseId) delete payload.seq;
+
+  try {
+    let res;
+    if (editingExpenseId) {
+      res = await fetch(
+        `${SUPABASE_URL}/rest/v1/dept_expense?id=eq.${editingExpenseId}`,
+        { method: 'PATCH', headers: HEADERS, body: JSON.stringify(payload) }
+      );
+    } else {
+      res = await fetch(
+        `${SUPABASE_URL}/rest/v1/dept_expense`,
+        { method: 'POST', headers: HEADERS, body: JSON.stringify(payload) }
+      );
+    }
+    if (!res.ok) throw new Error(await res.text());
+    closeExpenseModal();
+    await loadExpenses();
+    showToast(editingExpenseId ? '✅ 경비가 수정되었습니다.' : '✅ 경비가 추가되었습니다.');
+  } catch (e) {
+    console.error('저장 실패:', e);
+    showToast('❌ 저장에 실패했습니다.');
+  }
+}
+
+/* =============================================
+   경비 삭제
+============================================= */
+async function deleteExpense(id) {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/dept_expense?id=eq.${id}`,
+      { method: 'DELETE', headers: HEADERS }
+    );
+    if (!res.ok) throw new Error();
+    await loadExpenses();
+    showToast('🗑️ 삭제되었습니다.');
+  } catch (e) {
+    showToast('❌ 삭제에 실패했습니다.');
+  }
+}
+
+/* =============================================
+   경비 모달 닫기
+============================================= */
+function closeExpenseModal() {
+  document.getElementById('expenseModal').classList.remove('open');
+  editingExpenseId = null;
+}
+
+/* =============================================
+   초기 데이터 업로드 (엑셀 → Supabase)
+   처음 한 번만 실행하세요!
+   중복 실행 시 데이터가 중복됩니다.
+============================================= */
+async function importInitialData() {
+  if (!confirm('엑셀 초기 데이터를 Supabase에 업로드합니다.\n처음 한 번만 실행하세요. 계속하시겠습니까?')) return;
+
+  showToast('⏳ 데이터 업로드 중...', 10000);
+
+  // ---- 업무일정표 초기 데이터 ----
+  // 모든 객체가 동일한 키를 가져야 Supabase 배열 INSERT가 됩니다
+  // 누락 필드는 null로 채웁니다
+  const taskBase = {
+    status:null, lead:null, sub:null, title:null, location:null,
+    start_date:null, end_date:null, save_time:null, work_time:null,
+    sales:null, request_date:null, deadline:null, dday:null, lead_time:null,
+    category:null, nature:null, modeling:null, drawing:null, manual:null,
+    intensity:null, design_path:null, drawing_path:null, memo:null, guide:null
+  };
+  // 각 항목은 taskBase와 병합해서 키를 통일합니다
+  const taskRows = [
+    { status:'1. 요청', lead:'', sub:'', title:'그네 디자인 변경 프레임 125A 이용, 기울어진 각도 그대로 아치삭제 기초는 딥마운팅x >> 서페이스 마운팅', location:'', sales:'대표님', category:'신제품개발', nature:'놀이시설개발', intensity:'중' },
+    { status:'1. 요청', lead:'', sub:'', title:'더블돔 체크리스트 E 네트, K네트 연결부 사다리 분할작업 필요', location:'', sales:'백운기', intensity:'하' },
+    { status:'2 진행중', lead:'주종현', sub:'', title:'KR_242801_ 김제 앙글방글 아이러브 아지트 조성사업 벌룬', location:'김제', start_date:'2025-08-15', sales:'박근형', request_date:'2025-08-01', deadline:'2025-09-19', dday:-209, lead_time:35, category:'국내영업', nature:'놀이시설 DB', modeling:'진행중', intensity:'최상' },
+    { status:'2 진행중', lead:'주종현', sub:'정재철', title:'밀양 알프스 슬라이드 출구 문제 AS건', location:'밀양', start_date:'2025-09-22', sales:'박근형', request_date:'2025-09-21', deadline:'2025-09-21', dday:-229, lead_time:1, category:'국내', nature:'국내', modeling:'완료', drawing:'완료', manual:'완료', intensity:'하' },
+    { status:'2 진행중', lead:'정재철', sub:'', title:'마운틴카트 전기계통 수리 및 발주대비 개선작업 진행', location:'동해', start_date:'2025-08-16', sales:'회장님', request_date:'2025-08-23', deadline:'2025-08-31', dday:-221, lead_time:7, category:'어드벤처', nature:'어드벤처개발', modeling:'미적용', drawing:'미적용', manual:'미적용', intensity:'중' },
+    { status:'2 진행중', lead:'정재철', sub:'주종현', title:'ETX 구동부 샘플 개발 (모델링, 시제품제작, 테스트 등)', location:'해운대', start_date:'2025-07-25', sales:'회장님', request_date:'2025-09-20', deadline:'2025-10-19', dday:-209, lead_time:22, category:'어드벤처', nature:'어드벤처개발', modeling:'진행중', intensity:'최상' },
+    { status:'4. 보류', lead:'정재철', sub:'', title:'전동레일바이크 개발', location:'김해', start_date:'2026-04-15', sales:'회장님', request_date:'2026-04-12', deadline:'2026-06-17', dday:-166, lead_time:49, category:'어드벤처', nature:'어드벤처개발', modeling:'진행중', drawing:'진행중', manual:'미적용', intensity:'중' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'레일 바이크', sales:'회장님', start_date:'2026-01-23', end_date:'2026-02-27', lead_time:25, category:'어드벤쳐', nature:'어드벤처개발', modeling:'완료', drawing:'완료', manual:'완료', intensity:'상' },
+    { status:'2 진행중', lead:'주종현', sub:'', title:'고령 GS-AH102 계단 제안', start_date:'2026-01-29', sales:'박근형', request_date:'2026-01-29', category:'기성품', nature:'국내', modeling:'진행중', drawing:'진행중', manual:'진행중', intensity:'중' },
+    { status:'4. 보류', lead:'정재철', sub:'주종현', title:'한전 접이식 스페이서 카트 개발건', location:'한전', start_date:'2026-02-16', sales:'회장님', request_date:'2026-02-16', deadline:'2026-02-25', dday:-133, lead_time:8, category:'개발', nature:'어드벤처개발', modeling:'완료', drawing:'완료', manual:'미적용', intensity:'중' },
+    { status:'2 진행중', lead:'김태훈', sub:'', title:'GS-RG103 모델링, 제작도, 매뉴얼, 체크리스트', start_date:'2026-04-01', end_date:'2026-04-19', lead_time:14, sales:'대표님', nature:'놀이시설 DB', modeling:'진행중', drawing:'진행중', manual:'진행중', intensity:'중' },
+    { status:'3. 지속적진행', lead:'정재철', sub:'', title:'ERP 부속품 등록 및 BOM 시스템 샘플 테스트', location:'ERP', start_date:'2025-05-09', sales:'대표님', request_date:'2025-05-07', deadline:'2025-05-18', dday:-306, lead_time:10, category:'DB', nature:'놀이시설 DB', modeling:'미적용', drawing:'미적용', manual:'미적용', intensity:'하' },
+    { status:'3. 지속적진행', lead:'이미녕', sub:'주종현, 정재철', title:'세발 수상바이크 개발', start_date:'2024-11-25', sales:'회장님', category:'어드벤처', nature:'어드벤처개발', modeling:'진행중', drawing:'진행중', manual:'미적용', intensity:'상', memo:'세발 수상바이크 개발 - 프로펠러 장착/ 달 모양 상부 데코레이션 작업/ LED 조명 25.02월부터 싱가폴프로젝트로 인해 중단됨.' },
+    { status:'3. 지속적진행', lead:'김태훈', sub:'', title:'스탠다드 매뉴얼 제작 및 사내 부속품 DB 표준화', location:'없음', start_date:'2024-07-02', sales:'대표님', category:'기성품', nature:'놀이시설 DB', modeling:'진행중', drawing:'진행중', manual:'진행중', intensity:'하', memo:'설계 기본 매뉴얼 제작', guide:'신규직원 입사시 필요한 기본 설계 매뉴얼 제작' },
+    { status:'4. 보류', lead:'정재철', sub:'이미녕, 주종현', title:'ERP 사용을 위한 부속품 부품코드 생성 체계 정리', location:'ERP', start_date:'2025-05-09', sales:'대표님', category:'기성품', nature:'놀이시설 DB', modeling:'미적용', drawing:'미적용', manual:'미적용', intensity:'중' },
+    { status:'3. 지속적진행', lead:'김태훈', sub:'정재철, 주종현', title:'스페이스 크레프트 정리', start_date:'2024-03-02', sales:'대표님', category:'기성품', nature:'놀이시설 DB', modeling:'진행중', intensity:'하', memo:'기성품 부속 모델링 데이터화' },
+    { status:'3. 지속적진행', lead:'이미녕', sub:'', title:'부속발주도면 최신 도곽에 맞춰 CAD파일 수정, 발주도면 리스트 정리', location:'자재팀', start_date:'2024-12-12', sales:'표형선', category:'기성품', nature:'놀이시설 DB', modeling:'미적용', drawing:'미적용', manual:'미적용', intensity:'중' },
+    { status:'3. 지속적진행', lead:'김태훈', sub:'', title:'ERP 기성품 BOM 등록', sales:'대표님', nature:'놀이시설 DB', modeling:'미적용', drawing:'미적용', manual:'미적용' },
+    { status:'4. 보류', lead:'김태훈', sub:'주종현', title:'Φ35 로프 체결 부속품 개발', start_date:'2025-09-16', sales:'회장님', request_date:'2025-09-16', deadline:'2025-10-08', dday:-216, lead_time:17, category:'교량 개발품', nature:'지원업무', modeling:'진행중', drawing:'진행중', intensity:'중' },
+    { status:'4. 보류', lead:'김태훈', sub:'정재철', title:'회장님실 벽면 HPL 글귀 가공', start_date:'2024-01-06', end_date:'2024-03-07', sales:'회장님', request_date:'2024-01-06', deadline:'2024-03-07', category:'HPL', nature:'지원업무', modeling:'미적용', drawing:'미적용', manual:'미적용', intensity:'하', memo:'HPL 글귀 가공 작업진행' },
+    { status:'4. 보류', lead:'김태훈', sub:'', title:'플라움캠핑장 분리수거 및 주의사항 HPL가공', start_date:'2024-12-27', sales:'회장님', request_date:'2024-12-27', deadline:'2025-01-01', category:'HPL', nature:'지원업무', modeling:'미적용', drawing:'미적용', manual:'미적용', intensity:'하' },
+    { status:'4. 보류', lead:'김태훈', sub:'정재철', title:'영도 전망대 3D 프린터', location:'영도', start_date:'2024-07-06', end_date:'2024-07-24', sales:'회장님', category:'3D프린터', nature:'지원업무', modeling:'완료', drawing:'보류', manual:'보류', intensity:'하', memo:'전망대 3D 프린터 출력 디자인5종' },
+    { status:'5. 완료', lead:'주종현', sub:'정재철, 이미녕, 김태훈', title:'TUV 20종 매뉴얼, 구조계산서 진행', location:'TUV', start_date:'2025-10-29', end_date:'2025-11-26', sales:'이은애', request_date:'2025-10-11', deadline:'2025-11-26', lead_time:35, category:'기성품', nature:'놀이시설 DB', modeling:'완료', manual:'진행중', intensity:'최상' },
+    { status:'5. 완료', lead:'김태훈', sub:'', title:'GS-RG102 모델링, 제작도, 매뉴얼, 체크리스트', start_date:'2026-02-25', end_date:'2026-03-19', lead_time:16, sales:'대표님', nature:'놀이시설 DB', modeling:'완료', drawing:'완료', manual:'완료', intensity:'중' },
+    { status:'5. 완료', lead:'정재철', sub:'주종현, 김태훈', title:'맥시코 GS-R301 도면 및 제작도, 체크리스트 제공', location:'멕시코', start_date:'2026-04-04', end_date:'2026-04-05', sales:'이윤슬', request_date:'2026-04-01', deadline:'2026-04-05', lead_time:5, category:'기성품', nature:'놀이시설 DB', drawing:'미적용', manual:'완료', intensity:'하' },
+    { status:'5. 완료', lead:'정재철', sub:'', title:'기성품 GS-W805S (L), GS-W805S (I) 레이아웃도면, 매뉴얼, 체크리스트 정리', start_date:'2026-04-26', end_date:'2026-05-02', sales:'김정화', request_date:'2026-04-26', deadline:'2026-05-03', lead_time:6, category:'기성품', nature:'놀이시설 DB', modeling:'완료', manual:'완료', intensity:'하' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'제주도 원형 바이크 조립 휠 마모로 인한 바퀴교체 가공도면 수정', location:'제주도', start_date:'2026-05-02', end_date:'2026-05-02', sales:'백운기', request_date:'2026-05-01', deadline:'2026-05-03', lead_time:3, category:'어드벤쳐', nature:'어드벤처개발', modeling:'완료', drawing:'완료', manual:'완료', intensity:'중' },
+    { status:'2 진행중', lead:'김태훈', sub:'주종현, 정재철', title:'주26067_TH_The Skywalk is for St Paul int School Bkk', location:'태국', start_date:'2026-04-21', end_date:'2026-05-21', sales:'이윤슬', deadline:'2026-05-21', lead_time:32, nature:'해외', modeling:'진행중', drawing:'진행중', manual:'진행중', intensity:'하' },
+    { status:'5. 완료', lead:'정재철', sub:'', title:'신제품 개발 GS-Ws05(가칭)', start_date:'2026-05-02', end_date:'2026-05-02', sales:'대표님', request_date:'2026-05-02', deadline:'2026-05-02', category:'기성품', nature:'놀이시설개발', modeling:'완료', drawing:'진행중', manual:'진행중', intensity:'하' },
+    { status:'5. 완료', lead:'정재철', sub:'', title:'GS-SP1201 제작도 작성 핀란드 출고건', location:'핀란드', start_date:'2026-06-04', end_date:'2026-06-13', sales:'이은애', request_date:'2026-06-01', deadline:'2026-06-15', lead_time:11, nature:'놀이시설 DB', modeling:'완료', drawing:'완료', manual:'완료', intensity:'하' },
+    { status:'4. 보류', lead:'정재철', sub:'', title:'마그네틱 브레이크 중력레일 개발건', start_date:'2026-06-14', sales:'회장님', request_date:'2026-06-04', deadline:'2026-07-20', dday:-36, lead_time:35, category:'어드벤처', nature:'어드벤처개발', modeling:'진행중', intensity:'중' },
+    { status:'5. 완료', lead:'주종현', sub:'정재철', title:'김제 앙글 방글 아웃테리어 제작 방식 변경에 대한 물량 산출 이미지 작성', location:'김제', start_date:'2026-02-19', end_date:'2026-02-21', sales:'박근형', nature:'지원업무', modeling:'완료', drawing:'완료', manual:'미적용', intensity:'중' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'고령 좌학리 엔트 타워 추가 계단 제작도 및 모델링', location:'고령', start_date:'2026-02-11', end_date:'2026-02-28', sales:'김기범', request_date:'2026-02-03', deadline:'2026-03-01', lead_time:21, nature:'지원업무', modeling:'완료', drawing:'완료', manual:'완료', intensity:'상' },
+    { status:'5. 완료', lead:'주종현', sub:'정재철', title:'한전 트롤리카 제작도 및 모델링 수정', location:'한전', start_date:'2026-03-02', end_date:'2026-03-12', sales:'회장님', request_date:'2026-02-10', nature:'어드벤처개발', modeling:'완료', drawing:'완료', manual:'미적용', intensity:'상' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'GS-R301 트롤리 도면 및 모델링 수정', location:'멕시코', start_date:'2026-04-17', end_date:'2026-04-17', sales:'표형선', request_date:'2026-04-17', deadline:'2026-04-17', nature:'놀이시설 DB', drawing:'완료', intensity:'하' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'구례 섬진강 바이크 BOM 리스트 작업', location:'구례', start_date:'2026-04-16', end_date:'2026-04-17', sales:'김정화', request_date:'2026-04-12', deadline:'2026-04-19', lead_time:6, nature:'지원업무', modeling:'완료', drawing:'완료', manual:'완료', intensity:'중' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'금호 중력 레일 트롤리 조립형 제작도 수정', location:'금호', start_date:'2026-04-15', end_date:'2026-04-19', sales:'백운기', nature:'놀이시설개발', modeling:'완료', drawing:'완료', manual:'완료', intensity:'중' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'제주도 바이크 반대 방향 주행용 제작도', location:'제주도', start_date:'2026-04-23', end_date:'2026-04-25', sales:'백운기', request_date:'2026-04-08', deadline:'2026-04-19', lead_time:10, nature:'어드벤처개발', modeling:'완료', drawing:'완료', manual:'완료', intensity:'상' },
+    { status:'2 진행중', lead:'주종현', sub:'김태훈', title:'TH_260905_Skywalk for Nist', location:'태국', start_date:'2026-05-02', end_date:'2026-05-10', sales:'이윤슬', request_date:'2026-04-08', deadline:'2026-05-21', lead_time:32, category:'해외영업', nature:'해외', modeling:'진행중', drawing:'진행중', manual:'진행중', intensity:'중' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'제주도 바이크 반대 방향 주행용 물량 산출 엑셀 파일 작성', location:'제주도', start_date:'2026-04-30', end_date:'2026-05-01', sales:'김정화', category:'어드벤쳐', nature:'어드벤처개발', modeling:'완료', drawing:'완료', manual:'완료', intensity:'중' },
+    { status:'5. 완료', lead:'김태훈', sub:'', title:'CN_254001_Concordia International School Shanghai 누락 HPL 작업', start_date:'2026-04-30', end_date:'2026-04-30', sales:'표형선', request_date:'2026-04-30', deadline:'2026-04-30', drawing:'완료', intensity:'최하', memo:'홈파기 누락 부분 추가 작업' },
+    { status:'5. 완료', lead:'주종현', sub:'', title:'주24403 KR_242403 아산 GS-SV102 AS 입구 추가 건', location:'아산', start_date:'2026-04-26', end_date:'2026-04-30', sales:'김기범', request_date:'2026-04-24', deadline:'2026-05-03', lead_time:8, nature:'지원업무', modeling:'완료', drawing:'완료', manual:'완료', intensity:'중' },
+    { status:'5. 완료', lead:'정재철', sub:'', title:'뉴질랜드 GS-TP203 커스텀', location:'뉴질랜드', start_date:'2026-06-29', end_date:'2026-07-17', sales:'이윤슬', request_date:'2026-06-29', deadline:'2026-07-17', lead_time:15, category:'기성품', nature:'해외', modeling:'완료', drawing:'완료', manual:'완료', intensity:'중' },
+    { status:'2 진행중', lead:'정재철', sub:'', title:'싱가폴 GS-TP203 커스텀', location:'싱가폴', start_date:'2026-07-20', sales:'이윤슬', request_date:'2026-07-17', deadline:'2026-09-12', dday:11, lead_time:41, category:'기성품', nature:'해외', modeling:'완료', drawing:'진행중', intensity:'중' },
+  ];
+  // taskBase와 병합해서 모든 행의 키를 통일
+  const tasks = taskRows.map(r => ({ ...taskBase, ...r }));
+
+  // ---- 경비사용내역 초기 데이터 ----
+  const TOTAL_BUDGET = 1080000;
+  const expenses = [
+    { seq:1, used_date:'2026-01-14', expense_type:'식사', attendees:3, amount:106000, note:'회식' },
+    { seq:2, used_date:'2026-03-11', expense_type:'식사', attendees:null, amount:128900, note:'회식' },
+    { seq:3, used_date:'2026-05-14', expense_type:'식사', attendees:null, amount:164000, note:'회식' },
+    { seq:4, used_date:'2026-05-15', expense_type:'식사', attendees:null, amount:30000, note:'식사' },
+    { seq:5, used_date:'2026-05-29', expense_type:'식사', attendees:null, amount:30500, note:'식사' },
+    { seq:6, used_date:'2026-05-29', expense_type:'커피', attendees:null, amount:6000, note:'커피' },
+  ];
+
+  // 경비 잔액 자동 계산
+  let running = TOTAL_BUDGET;
+  expenses.forEach(e => {
+    e.budget_limit = running;
+    running -= e.amount;
+    e.balance = running;
+  });
+
+  try {
+    // 업무 데이터 일괄 INSERT
+    const r1 = await fetch(`${SUPABASE_URL}/rest/v1/task_schedule`, {
+      method: 'POST',
+      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(tasks)
+    });
+    if (!r1.ok) throw new Error('업무 데이터 업로드 실패: ' + await r1.text());
+
+    // 경비 데이터 일괄 INSERT
+    const r2 = await fetch(`${SUPABASE_URL}/rest/v1/dept_expense`, {
+      method: 'POST',
+      headers: { ...HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(expenses)
+    });
+    if (!r2.ok) throw new Error('경비 데이터 업로드 실패: ' + await r2.text());
+
+    await refreshAll();
+    showToast('✅ 초기 데이터 업로드 완료!', 3000);
+  } catch (e) {
+    console.error(e);
+    showToast('❌ 업로드 실패: ' + e.message, 4000);
+  }
+}
+
+/* =============================================
+   앱 실행 시작
+============================================= */
+init();
+</script>
+</body>
+</html>
