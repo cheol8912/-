@@ -1481,7 +1481,7 @@ body{
   <h1>📋 <span>기술전략팀</span> <span class="h1-sub">업무관리</span> <span class="live-clock" id="live-clock"></span></h1>
   <div class="header-right">
     <!-- 연도 선택 탭 — 업무일정표/경비사용내역 탭에서만 표시 (주간일지/월간일지에는 불필요) -->
-    <div class="year-tab-wrap" id="yearTabWrap" style="display:none;">
+    <div class="year-tab-wrap" id="yearTabWrap">
       <div class="year-tab-group" id="yearTabGroup"></div>
       <button class="year-new-btn" onclick="addNewYear()" title="새 연도 시작">+ 연도 추가</button>
     </div>
@@ -1497,9 +1497,9 @@ body{
      탭바
 ============================================================ -->
 <div class="tab-bar">
-  <button class="tab active" id="tab-weekly" onclick="switchTab('weekly')">📝 주간일지</button>
+  <button class="tab active" id="tab-task" onclick="switchTab('task')">📋 업무일정표</button>
+  <button class="tab" id="tab-weekly" onclick="switchTab('weekly')">📝 주간일지</button>
   <button class="tab" id="tab-monthly" onclick="switchTab('monthly')">🗓 월간일지</button>
-  <button class="tab" id="tab-task" onclick="switchTab('task')">📋 업무일정표</button>
   <button class="tab" id="tab-expense" onclick="switchTab('expense')">💰 경비사용내역</button>
 </div>
 
@@ -1509,7 +1509,7 @@ body{
 <div class="main">
 
   <!-- ======== 주간일지/월간일지 공용 패널 ======== -->
-  <div class="tab-panel active" id="panel-worklog">
+  <div class="tab-panel" id="panel-worklog">
     <div class="wl-main">
       <!-- 부서명 타이틀 -->
       <div class="dept-title" id="deptTitle">기술전략부</div>
@@ -1560,7 +1560,7 @@ body{
   </div>
 
   <!-- ======== 업무일정표 패널 ======== -->
-  <div class="tab-panel" id="panel-task">
+  <div class="tab-panel active" id="panel-task">
     <!-- 상태 필터 버튼 바 (클릭 시 해당 상태만 필터링) -->
     <div class="filter-bar">
       <button class="flt-btn all active" id="flt-all"  onclick="setStatusFilter('')">
