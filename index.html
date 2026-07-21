@@ -711,6 +711,9 @@ body{
   border-radius:3px; transition:background .12s;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
+
+/* ★ 프로젝트명 / 업무내용 글자크기 변경 — 여기 숫자만 바꾸면 됩니다 */
+#taskTableWrap .title-cell{ font-size:14px; }
 .c-text:focus{                        /* 편집 중일 때만 파란 테두리 */
   background:var(--blueprint-bg);
   box-shadow:inset 0 0 0 2px var(--blueprint);
@@ -2368,7 +2371,7 @@ function renderTask(){
         case 'sales':     html+=tdDropdown(id,'sales',    t.sales,    'center'); break;
         case 'category':  html+=tdDropdown(id,'category', t.category, 'center'); break;
         /* 텍스트 직접입력 셀 */
-        case 'title':     html+=tdText(id,'title',    t.title,    '업무내용 입력'); break;
+        case 'title':     html+=tdText(id,'title',    t.title,    '업무내용 입력', 'title-cell'); break;
         case 'location':  html+=tdText(id,'location', t.location, '출고지');       break;
         /* 날짜 셀 */
         case 'request_date': html+=tdDate(id,'request_date', t.request_date); break;
@@ -2422,8 +2425,8 @@ function renderTask(){
 /* ---- 글자 입력 셀 ----
    contenteditable="true" → 클릭하면 그 자리에서 바로 타이핑
    onblur(칸 밖 클릭) 시 자동 저장 */
-function tdText(id, field, value, placeholder){
-  return '<td><div class="c-box"><div class="c-text" contenteditable="true"'
+function tdText(id, field, value, placeholder, extraClass=''){
+  return '<td><div class="c-box"><div class="c-text'+(extraClass?' '+extraClass:'')+'" contenteditable="true"'
     +' data-ph="'+placeholder+'"'
     +' title="'+esc(value)+'"'
     +' onblur="saveField(\''+id+'\',\''+field+'\',this.innerText.trim())"'
@@ -3999,33 +4002,21 @@ function renderBody(){
   }
 
   // 앱을 맨 처음 열었을 때 딱 한 번만, "오늘" 날짜 줄이 표 가운데 오도록 자동 스크롤
+  // ★ scrollIntoView는 문서(페이지) 전체까지 스크롤시켜서 탭바가 헤더 뒤로 숨는 버그가 있었음
+  //   → 표 박스(.grid-wrap) "안에서만" 스크롤하도록 scrollTop 직접 계산 방식으로 교체
   if(!didInitialScroll){
     didInitialScroll = true;
-    scrollToTodayRow();
+    setTimeout(() => {
+      const todayStr = toDateStr(TODAY);
+      const row = body.querySelector(`tr[data-date="${todayStr}"]`);
+      const wrap = document.querySelector('#wlTabWeekly .grid-wrap');
+      if(row && wrap){
+        /* 오늘 행이 표 박스의 세로 가운데쯤 오도록 컨테이너 스크롤만 이동 */
+        const target = row.offsetTop - (wrap.clientHeight / 2) + (row.offsetHeight / 2);
+        wrap.scrollTop = Math.max(0, target);
+      }
+    }, 30);
   }
-}
-
-/* ============================================================
-   ★ [추가됨] "오늘" 날짜 줄이 표(.grid-wrap) 세로 가운데쯤 오도록 스크롤 이동시키는 함수.
-   - 앱을 맨 처음 열었을 때(renderBody 안에서) 자동으로 한 번 호출되고,
-   - "오늘" 버튼을 누를 때도 다시 호출되어, 다른 달을 보고 있다가도 오늘 날짜로 화면이 이동함.
-   ★ scrollIntoView는 문서(페이지) 전체까지 스크롤시켜서 탭바가 헤더 뒤로 숨는 버그가 있었음
-     → 표 박스(.grid-wrap) "안에서만" 스크롤하도록 scrollTop 직접 계산 방식으로 처리
-   ============================================================ */
-function scrollToTodayRow(){
-  // render()가 끝난 직후 바로 실행하면 브라우저가 아직 표 레이아웃(높이 등)을 다 계산하기 전이라
-  // offsetTop 값이 부정확할 수 있어서, 약간의 지연(setTimeout)을 둠
-  setTimeout(() => {
-    const todayStr = toDateStr(TODAY);
-    const body = document.getElementById('gridBody');
-    const wrap = document.querySelector('#wlTabWeekly .grid-wrap');
-    const row = body ? body.querySelector(`tr[data-date="${todayStr}"]`) : null;
-    if(row && wrap){
-      /* 오늘 행이 표 박스의 세로 가운데쯤 오도록 컨테이너 스크롤만 이동 */
-      const target = row.offsetTop - (wrap.clientHeight / 2) + (row.offsetHeight / 2);
-      wrap.scrollTop = Math.max(0, target);
-    }
-  }, 30);
 }
 
 /* ============================================================
@@ -4460,7 +4451,7 @@ function wlOpenModal({ title, bodyHtml, footerHtml, onMount }){
   // 아래 class 이름(modal-overlay / modal-panel / modal-header 등)들이
   // 각각 위쪽 CSS의 같은 이름 규칙과 연결되어 팝업의 생김새를 결정함
   root.innerHTML = `
-    <div class="modal-overlay open" id="wlModalOverlay">
+    <div class="modal-overlay" id="wlModalOverlay">
       <div class="modal-panel">
         <div class="modal-header">
           <h3>${title}</h3>
@@ -4473,6 +4464,7 @@ function wlOpenModal({ title, bodyHtml, footerHtml, onMount }){
   `;
   const close = () => { root.innerHTML = ''; }; // 팝업을 닫는 방법 = 담아뒀던 내용을 통째로 비우는 것
   const overlay = document.getElementById('wlModalOverlay');
+  overlay.classList.add('open');   /* ★ base CSS가 .modal-overlay{display:none}으로 숨기므로 .open으로 표시 */
   document.getElementById('wlModalCloseBtn').addEventListener('click', close);
   // 오버레이(어두운 바깥 배경)를 클릭했을 때 닫는 코드는 "일부러" 넣지 않았음
   // -> 그래서 바깥을 클릭해도 팝업이 안 닫히는 것임
@@ -5070,18 +5062,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(currentMonth > 12) { currentMonth = 1; currentYear++; }
     wlRefreshAll();
   });
-  // "오늘" 버튼 - 오늘이 속한 연/월로 즉시 이동한 뒤, 오늘 날짜 줄로 화면을 스크롤함
-  // (이미 이번 달을 보고 있는 상태라면 서버에서 다시 불러올 필요 없이 스크롤만 이동함)
-  document.getElementById('todayBtn').addEventListener('click', async () => {
-    const alreadyOnThisMonth = currentYear === TODAY.getFullYear() && currentMonth === TODAY.getMonth() + 1;
-    if(alreadyOnThisMonth){
-      scrollToTodayRow();
-      return;
-    }
+  // "오늘" 버튼 - 오늘이 속한 연/월로 즉시 이동
+  document.getElementById('todayBtn').addEventListener('click', () => {
     currentYear = TODAY.getFullYear();
     currentMonth = TODAY.getMonth() + 1;
-    await wlRefreshAll();
-    scrollToTodayRow();
+    wlRefreshAll();
   });
 
   // "↻ 새로고침" 버튼 - 지금 보고 있는 연/월은 그대로 두고, 서버에서 데이터만 다시 불러옴
